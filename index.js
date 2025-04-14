@@ -12,7 +12,6 @@ let wordList = [];
 
 const fs = require('fs');
 
-// Read words from local file
 async function fetchWords() {
   try {
     const data = await fs.promises.readFile('words.txt', 'utf8');
@@ -23,75 +22,111 @@ async function fetchWords() {
   }
 }
 
+function isValidPrefix(prefix) {
+  return wordList.some(word => word.startsWith(prefix));
+}
+
+function getMatchingWords(pattern) {
+  return wordList.filter(word => {
+    for (let i = 0; i < 4; i++) {
+      if (pattern[i] !== '' && pattern[i] !== word[i]) {
+        return false;
+      }
+    }
+    return true;
+  });
+}
+
 function generateCrossword() {
-  let attempts = 0;
-  const maxAttempts = 1000;
-  console.log('Starting crossword generation with', wordList.length, 'words');
-
-  while (attempts < maxAttempts) {
-    const grid = Array(4).fill().map(() => Array(4).fill(''));
-    const usedWords = { across: [], down: [] };
-    let isValid = true;
-    
-    // Place words across
-    for (let row = 0; row < 4; row++) {
-      const availableWords = wordList.filter(word => 
-        word.length === 4 &&
-        !usedWords.across.includes(word) && 
-        !usedWords.down.includes(word)
-      );
-      
-      if (availableWords.length === 0) {
-        isValid = false;
-        break;
-      }
-      
-      const word = availableWords[Math.floor(Math.random() * availableWords.length)];
-      for (let col = 0; col < 4; col++) {
-        grid[row][col] = word[col];
-      }
-      usedWords.across.push(word);
-    }
-
-    if (!isValid) {
-      attempts++;
-      continue;
-    }
-
-    // Check and place words down
-    for (let col = 0; col < 4; col++) {
-      let verticalWord = '';
-      for (let row = 0; row < 4; row++) {
-        verticalWord += grid[row][col];
-      }
-      
-      if (!wordList.includes(verticalWord)) {
-        isValid = false;
-        break;
-      }
-      
-      if (!usedWords.down.includes(verticalWord)) {
-        usedWords.down.push(verticalWord);
+  const grid = Array(4).fill().map(() => Array(4).fill(''));
+  const usedWords = { across: [], down: [] };
+  
+  function isValid(row, col, word, isAcross) {
+    // Check if word fits and creates valid prefixes in crossing direction
+    for (let i = 0; i < 4; i++) {
+      if (isAcross) {
+        grid[row][i] = word[i];
+        let verticalPrefix = '';
+        for (let j = 0; j <= row; j++) {
+          verticalPrefix += grid[j][i];
+        }
+        if (!isValidPrefix(verticalPrefix)) {
+          return false;
+        }
       } else {
-        isValid = false;
-        break;
+        grid[i][col] = word[i];
+        let horizontalPrefix = '';
+        for (let j = 0; j <= col; j++) {
+          horizontalPrefix += grid[i][j];
+        }
+        if (!isValidPrefix(horizontalPrefix)) {
+          return false;
+        }
       }
     }
-
-    if (!isValid) {
-      attempts++;
-      continue;
-    }
-
-    if (usedWords.across.length === 4 && usedWords.down.length === 4) {
-      console.log(`Generated valid crossword in ${attempts + 1} attempts`);
-      return { grid, words: usedWords };
-    }
-
-    attempts++;
+    return true;
   }
 
-  throw new Error('Could not generate valid crossword');
+  function solve(pos = 0) {
+    if (pos === 8) return true; // All words placed
+
+    const row = Math.floor(pos / 2);
+    const col = Math.floor(pos / 2);
+    const isAcross = pos % 2 === 0;
+
+    // Get pattern for current position
+    let pattern = Array(4).fill('');
+    if (isAcross) {
+      for (let i = 0; i < 4; i++) {
+        pattern[i] = grid[row][i] || '';
+      }
+    } else {
+      for (let i = 0; i < 4; i++) {
+        pattern[i] = grid[i][col] || '';
+      }
+    }
+
+    const possibleWords = getMatchingWords(pattern);
+    
+    for (const word of possibleWords) {
+      if (usedWords.across.includes(word) || usedWords.down.includes(word)) continue;
+
+      // Save current state
+      const gridBackup = grid.map(row => [...row]);
+      
+      if (isValid(row, col, word, isAcross)) {
+        // Place the word
+        if (isAcross) {
+          for (let i = 0; i < 4; i++) grid[row][i] = word[i];
+          usedWords.across.push(word);
+        } else {
+          for (let i = 0; i < 4; i++) grid[i][col] = word[i];
+          usedWords.down.push(word);
+        }
+
+        if (solve(pos + 1)) return true;
+
+        // Backtrack
+        if (isAcross) {
+          usedWords.across.pop();
+        } else {
+          usedWords.down.pop();
+        }
+        for (let i = 0; i < 4; i++) {
+          for (let j = 0; j < 4; j++) {
+            grid[i][j] = gridBackup[i][j];
+          }
+        }
+      }
+    }
+    return false;
+  }
+
+  const success = solve();
+  if (!success) {
+    throw new Error('Could not generate valid crossword');
+  }
+  return { grid, words: usedWords };
 }
 
 app.get('/generate', (req, res) => {
