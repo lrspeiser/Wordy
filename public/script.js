@@ -14,21 +14,40 @@ async function generateCrossword() {
     const gridElement = document.getElementById('grid');
     gridElement.innerHTML = '';
     
-    data.grid.forEach(row => {
-      row.forEach(letter => {
+    data.grid.forEach((row, i) => {
+      row.forEach((letter, j) => {
         const cell = document.createElement('div');
         cell.className = 'cell';
-        cell.textContent = letter.toUpperCase();
+        if (data.numbering[i][j]) {
+          const number = document.createElement('div');
+          number.className = 'number';
+          number.textContent = data.numbering[i][j];
+          cell.appendChild(number);
+        }
+        const letterDiv = document.createElement('div');
+        letterDiv.className = 'letter';
+        letterDiv.textContent = letter.toUpperCase();
+        cell.appendChild(letterDiv);
         gridElement.appendChild(cell);
       });
     });
 
     const wordsElement = document.getElementById('words');
     wordsElement.innerHTML = `
-      <h3>Across</h3>
-      <p>${data.words.across.join(', ')}</p>
-      <h3>Down</h3>
-      <p>${data.words.down.join(', ')}</p>
+      <div class="clues">
+        <div class="clue-section">
+          <h3>Across</h3>
+          ${data.clues.across.map(({number, clue, word}) => 
+            `<p><strong>${number}.</strong> ${clue} <em>(${word})</em></p>`
+          ).join('')}
+        </div>
+        <div class="clue-section">
+          <h3>Down</h3>
+          ${data.clues.down.map(({number, clue, word}) => 
+            `<p><strong>${number}.</strong> ${clue} <em>(${word})</em></p>`
+          ).join('')}
+        </div>
+      </div>
     `;
   } catch (error) {
     console.error('Error:', error);

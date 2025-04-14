@@ -2,6 +2,31 @@
 const express = require('express');
 const axios = require('axios');
 const cors = require('cors');
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+const OPENAI_API_URL = "https://api.openai.com/v1/chat/completions";
+const OPENAI_MODEL = "gpt-4";
+
+async function generateClue(word) {
+  try {
+    const response = await axios.post(OPENAI_API_URL, {
+      model: OPENAI_MODEL,
+      messages: [{
+        role: "user",
+        content: `Generate a short, clever crossword puzzle clue for the word "${word}". The clue should be concise and challenging but fair.`
+      }],
+      temperature: 0.7
+    }, {
+      headers: {
+        'Authorization': `Bearer ${OPENAI_API_KEY}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    return response.data.choices[0].message.content.trim();
+  } catch (error) {
+    console.error('Error generating clue:', error);
+    return `Clue for ${word}`;
+  }
+}
 
 const app = express();
 app.use(cors());
@@ -126,7 +151,40 @@ function generateCrossword() {
   if (!success) {
     throw new Error('Could not generate valid crossword');
   }
-  return { grid, words: usedWords };
+
+  // Generate clues and numbering
+  const numbering = Array(4).fill().map(() => Array(4).fill(0));
+  const clues = { across: [], down: [] };
+  let currentNumber = 1;
+
+  // Number the squares and generate clues
+  for (let i = 0; i < 4; i++) {
+    for (let j = 0; j < 4; j++) {
+      const isAcrossStart = j === 0;
+      const isDownStart = i === 0;
+      
+      if (isAcrossStart || isDownStart) {
+        numbering[i][j] = currentNumber;
+        if (isAcrossStart) {
+          const clue = await generateClue(usedWords.across[i]);
+          clues.across.push({ number: currentNumber, clue, word: usedWords.across[i] });
+        }
+        if (isDownStart) {
+          const clue = await generateClue(usedWords.down[j]);
+          clues.down.push({ number: currentNumber, clue, word: usedWords.down[j] });
+        }
+        if (isAcrossStart !== isDownStart) currentNumber++;
+        else if (isAcrossStart) currentNumber++;
+      }
+    }
+  }
+
+  return { 
+    grid, 
+    words: usedWords,
+    numbering,
+    clues
+  };
 }
 
 app.get('/generate', (req, res) => {
