@@ -87,6 +87,10 @@ function generateCrossword() {
 }
 
 app.get('/generate', (req, res) => {
+  if (wordList.length === 0) {
+    return res.status(503).json({ error: 'Word list not loaded yet. Please try again.' });
+  }
+  
   try {
     const crossword = generateCrossword();
     res.json(crossword);
@@ -95,7 +99,11 @@ app.get('/generate', (req, res) => {
   }
 });
 
-app.listen(5000, '0.0.0.0', async () => {
-  await fetchWords();
-  console.log('Server running on port 5000');
+// Load words first, then start server
+fetchWords().then(() => {
+  app.listen(5000, '0.0.0.0', () => {
+    console.log('Server running on port 5000');
+  });
+}).catch(error => {
+  console.error('Failed to start server:', error);
 });
