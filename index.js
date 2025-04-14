@@ -62,7 +62,7 @@ function getMatchingWords(pattern) {
   });
 }
 
-function generateCrossword() {
+async function generateCrossword() {
   const grid = Array(4).fill().map(() => Array(4).fill(''));
   const usedWords = { across: [], down: [] };
   
@@ -187,7 +187,7 @@ function generateCrossword() {
   };
 }
 
-app.get('/generate', (req, res) => {
+app.get('/generate', async (req, res) => {
   if (wordList.length === 0) {
     return res.status(503).json({ error: 'Word list not loaded yet. Please try again.' });
   }
