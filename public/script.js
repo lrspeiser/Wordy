@@ -2,9 +2,14 @@
 async function generateCrossword() {
   try {
     const gridSize = document.getElementById('gridSize').value;
+    document.getElementById('grid').innerHTML = 'Generating...';
+    document.getElementById('words').innerHTML = '';
+    
     const response = await fetch(`/generate?size=${gridSize}`);
-    if (!response.ok) {
-      throw new Error('Failed to generate crossword');
+    const data = await response.json();
+    
+    if (!response.ok || data.error) {
+      throw new Error(data.error || 'Failed to generate crossword');
     }
     const data = await response.json();
     

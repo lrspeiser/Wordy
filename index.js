@@ -60,13 +60,18 @@ function getMatchingWords(pattern) {
 }
 
 async function generateCrossword(size = 4) {
+  size = parseInt(size);
+  if (![4, 5, 6].includes(size)) {
+    throw new Error('Invalid grid size. Must be 4, 5, or 6.');
+  }
+
   const grid = Array(size).fill().map(() => Array(size).fill(''));
   const usedWords = { across: [], down: [] };
   
   // Filter words for correct length
-  const sizeWords = wordList.filter(word => word.length === size);
-  if (sizeWords.length === 0) {
-    throw new Error(`No ${size}-letter words available`);
+  const sizeWords = wordList.filter(word => word.length === size && /^[a-z]+$/.test(word));
+  if (sizeWords.length < size * 2) {
+    throw new Error(`Not enough ${size}-letter words available to create a crossword`);
   }
   
   // Start with a random word
