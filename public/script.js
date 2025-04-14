@@ -1,7 +1,8 @@
 
 async function generateCrossword() {
   try {
-    const response = await fetch('/generate');
+    const gridSize = document.getElementById('gridSize').value;
+    const response = await fetch(`/generate?size=${gridSize}`);
     if (!response.ok) {
       throw new Error('Failed to generate crossword');
     }
@@ -13,6 +14,8 @@ async function generateCrossword() {
     
     const gridElement = document.getElementById('grid');
     gridElement.innerHTML = '';
+    const size = data.grid.length;
+    gridElement.style.gridTemplateColumns = `repeat(${size}, ${window.innerWidth <= 600 ? '40px' : '60px'})`;
     
     data.grid.forEach((row, i) => {
       row.forEach((letter, j) => {

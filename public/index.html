@@ -8,6 +8,11 @@
 <body>
   <div class="container">
     <h1>Crossword Builder</h1>
+    <select id="gridSize" class="grid-selector">
+      <option value="4">4x4 Grid</option>
+      <option value="5">5x5 Grid</option>
+      <option value="6">6x6 Grid</option>
+    </select>
     <button onclick="generateCrossword()">Generate New Crossword</button>
     <div id="grid" class="grid"></div>
     <div id="words"></div>

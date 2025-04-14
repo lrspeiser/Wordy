@@ -2,15 +2,40 @@
 .container {
   max-width: 800px;
   margin: 0 auto;
-  padding: 20px;
+  padding: 10px;
   text-align: center;
 }
 
 .grid {
   display: inline-grid;
-  grid-template-columns: repeat(4, 60px);
   gap: 2px;
   margin: 20px 0;
+}
+
+.grid-selector {
+  padding: 8px;
+  margin: 10px;
+  font-size: 16px;
+}
+
+@media (max-width: 600px) {
+  .container {
+    padding: 5px;
+  }
+  
+  .cell {
+    width: 40px;
+    height: 40px;
+  }
+  
+  .letter {
+    font-size: 18px;
+  }
+  
+  .clues {
+    flex-direction: column;
+    gap: 20px;
+  }
 }
 
 .cell {

@@ -52,8 +52,10 @@ function isValidPrefix(prefix) {
 }
 
 function getMatchingWords(pattern) {
-  return wordList.filter(word => {
-    for (let i = 0; i < 4; i++) {
+  const size = pattern.length;
+  return wordList.filter(word => word.length === size && word.split('').every((letter, i) => 
+    pattern[i] === '' || pattern[i] === letter
+  ));
       if (pattern[i] !== '' && pattern[i] !== word[i]) {
         return false;
       }
@@ -63,8 +65,22 @@ function getMatchingWords(pattern) {
 }
 
 async function generateCrossword() {
-  const grid = Array(4).fill().map(() => Array(4).fill(''));
+  const size = parseInt(req.query.size) || 4;
+  const grid = Array(size).fill().map(() => Array(size).fill(''));
   const usedWords = { across: [], down: [] };
+  
+  // Filter words for correct length
+  const sizeWords = wordList.filter(word => word.length === size);
+  if (sizeWords.length === 0) {
+    throw new Error(`No ${size}-letter words available`);
+  }
+  
+  // Start with a random word
+  const startWord = sizeWords[Math.floor(Math.random() * sizeWords.length)];
+  for (let i = 0; i < size; i++) {
+    grid[0][i] = startWord[i];
+  }
+  usedWords.across.push(startWord);
   
   function isValid(row, col, word, isAcross) {
     // Check if word fits and creates valid prefixes in crossing direction
