@@ -59,8 +59,7 @@ function getMatchingWords(pattern) {
   );
 }
 
-async function generateCrossword() {
-  const size = parseInt(req.query.size) || 4;
+async function generateCrossword(size = 4) {
   const grid = Array(size).fill().map(() => Array(size).fill(''));
   const usedWords = { across: [], down: [] };
   
@@ -204,7 +203,8 @@ app.get('/generate', async (req, res) => {
   }
   
   try {
-    const crossword = await generateCrossword();
+    const size = parseInt(req.query.size) || 4;
+    const crossword = await generateCrossword(size);
     res.json(crossword);
   } catch (error) {
     res.status(500).json({ error: 'Failed to generate valid crossword. Please try again.' });
