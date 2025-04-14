@@ -26,6 +26,7 @@ async function fetchWords() {
 function generateCrossword() {
   let attempts = 0;
   const maxAttempts = 1000;
+  console.log('Starting crossword generation with', wordList.length, 'words');
 
   while (attempts < maxAttempts) {
     const grid = Array(4).fill().map(() => Array(4).fill(''));
@@ -59,17 +60,25 @@ function generateCrossword() {
 
     // Check and place words down
     for (let col = 0; col < 4; col++) {
-      const possibleWords = wordList.filter(word => 
-        word.length === 4 &&
-        !usedWords.across.includes(word) && 
-        !usedWords.down.includes(word) &&
-        word[0] === grid[0][col] &&
-        word[1] === grid[1][col] &&
-        word[2] === grid[2][col] &&
-        word[3] === grid[3][col]
-      );
+      let verticalWord = '';
+      for (let row = 0; row < 4; row++) {
+        verticalWord += grid[row][col];
+      }
+      
+      if (!wordList.includes(verticalWord)) {
+        isValid = false;
+        break;
+      }
+      
+      if (!usedWords.down.includes(verticalWord)) {
+        usedWords.down.push(verticalWord);
+      } else {
+        isValid = false;
+        break;
+      }
+    }
 
-      if (possibleWords.length === 0) {
+    if (!isValid) {
         isValid = false;
         break;
       }
