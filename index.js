@@ -21,9 +21,9 @@ async function generateClue(word) {
         role: "user",
         content: `These are crosswords for high schoolers, so it should be a reference that they can understand, but also is educational in nature. Generate a short, clever crossword puzzle clue for the word "${word}".`
       }],
-      temperature: 0.7,
-      timeout: 20000 // Increased timeout
+      temperature: 0.7
     }, {
+      timeout: 20000, // Move timeout to axios config
       headers: {
         'Authorization': `Bearer ${OPENAI_API_KEY}`,
         'Content-Type': 'application/json'
