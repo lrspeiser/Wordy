@@ -193,7 +193,7 @@ app.get('/generate', async (req, res) => {
   }
   
   try {
-    const crossword = generateCrossword();
+    const crossword = await generateCrossword();
     res.json(crossword);
   } catch (error) {
     res.status(500).json({ error: 'Failed to generate valid crossword. Please try again.' });
