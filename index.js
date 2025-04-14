@@ -156,45 +156,43 @@ async function generateCrossword(size = 4) {
      return true; // Word seems valid based on conflicts and prefixes
    }
 
-  function solve(pos = 0) { // Default pos=0 is fine for recursion itself
-    //console.log(`\n=== Solve attempt at position: ${pos} ===`); // Keep this log if useful
-    if (pos === size * 2) { // Base case: filled all slots (size ACROSS + size DOWN)
+  function solve(pos = 0) {
+    if (pos === size * 2) {
       console.log('Successfully placed all required word slots!');
       console.log('Final grid:');
       console.log(grid.map(row => row.join(' ')).join('\n'));
-      //console.log('Used words object:', usedWords); // Log the object structure if needed
-      return true; // Successfully filled the grid
+      return true;
     }
 
-    // Determine orientation and position based on 'pos'
-    // This assumes ACROSS 0, DOWN 0, ACROSS 1, DOWN 1, ...
+    // Early exit if we detect an impossible pattern
     const isAcross = pos % 2 === 0;
-    const index = Math.floor(pos / 2); // Which row (if Across) or col (if Down)
-    const row = isAcross ? index : 0; // Starting row
-    const col = isAcross ? 0 : index; // Starting column
+    const index = Math.floor(pos / 2);
+    const pattern = Array(size).fill('');
+    if (isAcross) {
+      for (let i = 0; i < size; i++) {
+        pattern[i] = grid[index][i] || '';
+      }
+    } else {
+      for (let i = 0; i < size; i++) {
+        pattern[i] = grid[i][index] || '';
+      }
+    }
 
-    // If it's the very first ACROSS word (pos 0), it's already placed. Skip to next.
-    // This condition is now handled by starting the initial call at solve(1).
-    // if (pos === 0) {
-    //     console.log("Position 0 (first ACROSS) already placed. Moving to pos 1.");
-    //     return solve(pos + 1);
-    // }
+    // Quick check if pattern has any possible matches before trying words
+    const hasValidWords = sizeWords.some(word => {
+      if (usedWordsSet.has(word)) return false;
+      for (let i = 0; i < size; i++) {
+        if (pattern[i] && pattern[i] !== word[i]) return false;
+      }
+      return true;
+    });
+
+    if (!hasValidWords) return false;
 
     console.log(`Position ${pos}: Trying to place ${isAcross ? 'ACROSS' : 'DOWN'} word at ${isAcross ? `row ${index}` : `col ${index}`}`);
     console.log('Current grid state:');
     console.log(grid.map(r => r.join(' ') || ' ').join('\n')); // Display grid better
 
-    // Get pattern for current position from the grid
-    let pattern = Array(size).fill('');
-    if (isAcross) {
-      for (let i = 0; i < size; i++) {
-        pattern[i] = grid[index][i] || ''; // Use index for row
-      }
-    } else {
-      for (let i = 0; i < size; i++) {
-        pattern[i] = grid[i][index] || ''; // Use index for col
-      }
-    }
     console.log(`Pattern to match: [${pattern.join(', ')}]`);
 
     // Find words matching the pattern from the AVAILABLE pool, excluding already used words
