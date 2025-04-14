@@ -443,7 +443,7 @@ async function generateCrossword(requestedSize = 4) {
 
 
   // Generate clues for the identified words async
-  async function generateAllClues() {
+  const generateAllClues = async () => {
     const cluePromises = [];
     for (const num in finalWords.across) {
         const word = finalWords.across[num];
@@ -458,7 +458,7 @@ async function generateCrossword(requestedSize = 4) {
         );
     }
     return await Promise.all(cluePromises);
-  }
+  };
 
   // Wait for all clues to be generated
   const generatedClues = await generateAllClues();
