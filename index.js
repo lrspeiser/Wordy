@@ -443,22 +443,25 @@ async function generateCrossword(requestedSize = 4) {
 
 
   // Generate clues for the identified words async
-  const cluePromises = [];
-  for (const num in finalWords.across) {
-      const word = finalWords.across[num];
-      cluePromises.push(
-          generateClue(word).then(clue => ({ direction: 'across', number: parseInt(num), clue, word }))
-      );
-  }
-  for (const num in finalWords.down) {
-      const word = finalWords.down[num];
-      cluePromises.push(
-          generateClue(word).then(clue => ({ direction: 'down', number: parseInt(num), clue, word }))
-      );
+  async function generateAllClues() {
+    const cluePromises = [];
+    for (const num in finalWords.across) {
+        const word = finalWords.across[num];
+        cluePromises.push(
+            generateClue(word).then(clue => ({ direction: 'across', number: parseInt(num), clue, word }))
+        );
+    }
+    for (const num in finalWords.down) {
+        const word = finalWords.down[num];
+        cluePromises.push(
+            generateClue(word).then(clue => ({ direction: 'down', number: parseInt(num), clue, word }))
+        );
+    }
+    return await Promise.all(cluePromises);
   }
 
   // Wait for all clues to be generated
-  const generatedClues = await Promise.all(cluePromises);
+  const generatedClues = await generateAllClues();
 
   // Populate the clues object
   generatedClues.forEach(item => {
