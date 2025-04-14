@@ -53,15 +53,10 @@ function isValidPrefix(prefix) {
 
 function getMatchingWords(pattern) {
   const size = pattern.length;
-  return wordList.filter(word => word.length === size && word.split('').every((letter, i) => 
-    pattern[i] === '' || pattern[i] === letter
-  ));
-      if (pattern[i] !== '' && pattern[i] !== word[i]) {
-        return false;
-      }
-    }
-    return true;
-  });
+  return wordList.filter(word => 
+    word.length === size && 
+    word.split('').every((letter, i) => pattern[i] === '' || pattern[i] === letter)
+  );
 }
 
 async function generateCrossword() {
