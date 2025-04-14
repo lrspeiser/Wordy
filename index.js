@@ -60,21 +60,29 @@ function getMatchingWords(pattern) {
 }
 
 async function generateCrossword(size = 4) {
+  console.log(`Starting generateCrossword with size: ${size}`);
   size = parseInt(size);
   if (![4, 5, 6].includes(size)) {
+    console.log(`Invalid size requested: ${size}`);
     throw new Error('Invalid grid size. Must be 4, 5, or 6.');
   }
 
+  console.log('Initializing grid and usedWords');
   const grid = Array(size).fill().map(() => Array(size).fill(''));
   const usedWords = { across: [], down: [] };
   
   // Filter words for correct length
+  console.log(`Filtering words for length ${size}`);
   const sizeWords = wordList.filter(word => word.length === size && /^[a-z]+$/.test(word));
+  console.log(`Found ${sizeWords.length} words of length ${size}`);
+  
   if (sizeWords.length < size * 2) {
+    console.log(`Insufficient words: only ${sizeWords.length} words available`);
     throw new Error(`Not enough ${size}-letter words available to create a crossword`);
   }
   
   // Start with a random word
+  console.log('Selecting initial random word');
   const startWord = sizeWords[Math.floor(Math.random() * sizeWords.length)];
   for (let i = 0; i < size; i++) {
     grid[0][i] = startWord[i];
@@ -108,11 +116,16 @@ async function generateCrossword(size = 4) {
   }
 
   function solve(pos = 0) {
-    if (pos === size * 2) return true; // All words placed
+    console.log(`\nSolve attempt at position: ${pos}`);
+    if (pos === size * 2) {
+      console.log('Successfully placed all words!');
+      return true; // All words placed
+    }
 
     const row = Math.floor(pos / 2);
     const col = Math.floor(pos / 2);
     const isAcross = pos % 2 === 0;
+    console.log(`Trying to place ${isAcross ? 'across' : 'down'} word at row:${row}, col:${col}`);
 
     // Get pattern for current position
     let pattern = Array(size).fill('');

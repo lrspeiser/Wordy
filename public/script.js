@@ -1,7 +1,9 @@
 
 async function generateCrossword() {
   try {
+    console.log('Starting crossword generation');
     const gridSize = document.getElementById('gridSize').value;
+    console.log(`Selected grid size: ${gridSize}`);
     document.getElementById('grid').innerHTML = 'Generating...';
     document.getElementById('words').innerHTML = '';
     
