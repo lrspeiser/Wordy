@@ -116,16 +116,21 @@ async function generateCrossword(size = 4) {
   }
 
   function solve(pos = 0) {
-    console.log(`\nSolve attempt at position: ${pos}`);
+    console.log(`\n=== Solve attempt at position: ${pos} ===`);
     if (pos === size * 2) {
       console.log('Successfully placed all words!');
-      return true; // All words placed
+      console.log('Final grid:');
+      console.log(grid.map(row => row.join(' ')).join('\n'));
+      console.log('Used words:', usedWords);
+      return true;
     }
 
     const row = Math.floor(pos / 2);
     const col = Math.floor(pos / 2);
     const isAcross = pos % 2 === 0;
-    console.log(`Trying to place ${isAcross ? 'across' : 'down'} word at row:${row}, col:${col}`);
+    console.log(`Position ${pos}: Trying to place ${isAcross ? 'ACROSS' : 'DOWN'} word at row:${row}, col:${col}`);
+    console.log('Current grid:');
+    console.log(grid.map(row => row.join(' ')).join('\n'));
 
     // Get pattern for current position
     let pattern = Array(size).fill('');
@@ -140,10 +145,15 @@ async function generateCrossword(size = 4) {
     }
 
     const possibleWords = getMatchingWords(pattern);
+    console.log(`Found ${possibleWords.length} possible words matching pattern: ${pattern.join('')}`);
     
     for (const word of possibleWords) {
-      if (usedWords.across.includes(word) || usedWords.down.includes(word)) continue;
+      if (usedWords.across.includes(word) || usedWords.down.includes(word)) {
+        console.log(`Skipping already used word: ${word}`);
+        continue;
+      }
 
+      console.log(`\nAttempting word: ${word}`);
       // Save current state
       const gridBackup = grid.map(row => [...row]);
       
@@ -161,6 +171,7 @@ async function generateCrossword(size = 4) {
 
         if (solve(pos + 1)) return true;
 
+        console.log(`\n🔄 Backtracking from position ${pos}, removing word: ${word}`);
         // Backtrack
         if (isAcross) {
           usedWords.across.pop();
