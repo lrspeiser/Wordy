@@ -1,21 +1,25 @@
-
 <!DOCTYPE html>
 <html>
 <head>
   <title>Crossword Builder</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"> <!-- Add viewport -->
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <div class="container">
-    <h1>Crossword Builder</h1>
-    <select id="gridSize" class="grid-selector">
-      <option value="4">4x4 Grid</option>
-      <option value="5">5x5 Grid</option>
-      <option value="6">6x6 Grid</option>
-    </select>
-    <button onclick="generateCrossword()">Generate New Crossword</button>
+    <h1>Crossword Puzzle</h1> <!-- Changed title slightly -->
+    <div class="controls">
+        <label for="gridSize">Grid Size:</label>
+        <select id="gridSize" class="grid-selector">
+          <option value="4">4x4 Grid</option>
+          <option value="5">5x5 Grid</option>
+          <option value="6">6x6 Grid</option>
+        </select>
+        <button id="generateBtn">Generate New Crossword</button>
+    </div>
+    <div id="loadingMessage" style="display: none; margin: 20px;">Generating... Please wait...</div>
     <div id="grid" class="grid"></div>
-    <div id="words"></div>
+    <div id="cluesContainer"></div> <!-- Changed ID -->
   </div>
   <script src="script.js"></script>
 </body>

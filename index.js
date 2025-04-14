@@ -1,13 +1,19 @@
 const express = require('express');
 const axios = require('axios');
 const cors = require('cors');
-const fs = require('fs'); // Moved fs require to top
+const fs = require('fs');
 
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 const OPENAI_API_URL = "https://api.openai.com/v1/chat/completions";
-const OPENAI_MODEL = "gpt-4";
+const OPENAI_MODEL = "gpt-4o"; // Do not change this model number
 
+// --- Updated generateClue Function ---
 async function generateClue(word) {
+  if (!word || typeof word !== 'string' || word.trim().length === 0) {
+    console.error('generateClue called with invalid word:', word);
+    return `Invalid word provided`;
+  }
+  console.log(`Requesting clue for: ${word}`);
   try {
     const response = await axios.post(OPENAI_API_URL, {
       model: OPENAI_MODEL,
@@ -15,493 +21,319 @@ async function generateClue(word) {
         role: "user",
         content: `These are crosswords for high schoolers, so it should be a reference that they can understand, but also is educational in nature. Generate a short, clever crossword puzzle clue for the word "${word}".`
       }],
-      temperature: 0.7
+      temperature: 0.7,
+      timeout: 20000 // Increased timeout
     }, {
       headers: {
         'Authorization': `Bearer ${OPENAI_API_KEY}`,
         'Content-Type': 'application/json'
       }
     });
-    // Basic check for valid response structure
-    if (response.data && response.data.choices && response.data.choices.length > 0 && response.data.choices[0].message) {
-        return response.data.choices[0].message.content.trim();
+    if (response.data && response.data.choices && response.data.choices.length > 0 && response.data.choices[0].message && response.data.choices[0].message.content) {
+        const clue = response.data.choices[0].message.content.trim();
+        console.log(`Received clue for '${word}': ${clue}`);
+        return clue;
     } else {
-        console.error('Unexpected response structure from OpenAI:', response.data);
+        console.error(`Unexpected response structure from OpenAI for '${word}':`, response.data);
         return `Clue for ${word}`; // Fallback
     }
   } catch (error) {
-    // Log more detailed error information if available
-    if (error.response) {
-        // The request was made and the server responded with a status code
-        // that falls out of the range of 2xx
-        console.error('Error generating clue - Status:', error.response.status);
-        console.error('Error generating clue - Data:', error.response.data);
+    let errorMsg = `Clue for ${word}`; // Default fallback
+    if (error.code === 'ECONNABORTED' || (error.message && error.message.toLowerCase().includes('timeout'))) {
+        console.error(`Error generating clue for "${word}": OpenAI request timed out.`);
+        errorMsg = `Timeout fetching clue for ${word}`;
+    } else if (error.response) {
+        console.error(`Error generating clue for "${word}" - Status:`, error.response.status);
+        console.error(`Error generating clue for "${word}" - Data:`, error.response.data);
+        errorMsg = `API Error for ${word} (${error.response.status})`;
     } else if (error.request) {
-        // The request was made but no response was received
-        console.error('Error generating clue - No response received:', error.request);
+        console.error(`Error generating clue for "${word}" - No response received:`, error.request);
+        errorMsg = `No response for ${word}`;
     } else {
-        // Something happened in setting up the request that triggered an Error
-        console.error('Error generating clue - Request setup error:', error.message);
+        console.error(`Error generating clue for "${word}" - Request setup error:`, error.message);
+        errorMsg = `Setup error for ${word}`;
     }
-    return `Clue for ${word}`; // Fallback clue
+    console.error(`Returning fallback/error clue for '${word}': ${errorMsg}`);
+    return errorMsg;
   }
 }
+// --- End Updated generateClue Function ---
+
 
 const app = express();
 app.use(cors());
 app.use(express.json());
-app.use(express.static('public'));
+app.use(express.static('public')); // Make sure 'public' folder exists
 
 let wordList = [];
-let globalSize = 4; // Default size, will be updated by generateCrossword
+let globalSize = 4;
 
 async function fetchWords() {
   try {
     const data = await fs.promises.readFile('words.txt', 'utf8');
-    // Filter out empty lines and trim whitespace, ensure lowercase
-    wordList = data.split('\n').map(word => word.trim().toLowerCase()).filter(word => word.length > 0 && /^[a-z]+$/.test(word));
-    console.log(`Loaded ${wordList.length} words`);
+    wordList = data.split('\n')
+                   .map(word => word.trim().toLowerCase())
+                   .filter(word => word.length > 0 && /^[a-z]+$/.test(word));
+    console.log(`Loaded ${wordList.length} valid words`);
   } catch (error) {
     console.error('Error reading words file:', error);
   }
 }
 
+// isValidPrefix (remains the same)
 function isValidPrefix(prefix) {
-  // Optimization: If prefix is empty, it's trivially valid
-  if (!prefix) return true;
-  // Find words of the same length as the prefix for potential full match check
-  const relevantLengthWords = wordList.filter(w => w.length === prefix.length);
-  if (relevantLengthWords.length > 0 && relevantLengthWords.some(word => word === prefix)) {
-      return true; // Exact match found
-  }
-  // Original check for prefix for incomplete words
-  // Only check if prefix length is less than the grid size
-  if (prefix.length < globalSize) {
-      return wordList.some(word => word.startsWith(prefix));
-  }
-  // If prefix length equals grid size, it must be a full word match (already checked)
-  return false;
+    if (!prefix) return true;
+    const prefixLen = prefix.length;
+    if (wordList.some(word => word.length === prefixLen && word === prefix)) { return true; }
+    if (prefixLen < globalSize) { return wordList.some(word => word.startsWith(prefix)); }
+    return false;
 }
 
-
+// getMatchingWords (remains the same)
 function getMatchingWords(pattern, availableWords, usedWordsSet) {
     const patternLength = pattern.length;
-    // Filter from availableWords instead of the full wordList for efficiency
+    if (!Array.isArray(availableWords)) { console.error("getMatchingWords received non-array:", availableWords); return []; }
     return availableWords.filter(word => {
-      if (word.length !== patternLength) return false; // Ensure correct length
-      if (usedWordsSet.has(word)) return false; // Skip already used words efficiently
-      for (let i = 0; i < patternLength; i++) {
-        // Allow empty pattern slots (''), or match existing letters
-        if (pattern[i] !== '' && pattern[i] !== word[i]) return false;
-      }
+      if (typeof word !== 'string' || word.length !== patternLength) return false;
+      if (usedWordsSet && usedWordsSet.has(word)) return false; // Check used set ONLY if provided
+      for (let i = 0; i < patternLength; i++) { if (pattern[i] !== '' && pattern[i] !== word[i]) return false; }
       return true;
     });
-  }
+}
 
-// *** NEW/IMPROVED isValid FUNCTION ***
-function isValid(row, col, word, isAcross, currentGrid, availableWords, usedWordsSet) {
-    const size = currentGrid.length; // Get size from grid
+// --- isValid FUNCTION with Reinstated DEBUG LOGGING ---
+function isValid(row, col, word, isAcross, currentGrid, availableWordsFullList, usedWordsSet) {
+    const size = currentGrid.length;
+    console.log(`  isValid CHECK: Trying word='${word}', start=[${row},${col}], isAcross=${isAcross}`); // DEBUG
 
-    // Check if the word itself conflicts with existing letters (basic check)
+    // Basic conflict check
     for (let i = 0; i < size; i++) {
-        const charToPlace = word[i];
-        let r = isAcross ? row : row + i;
-        let c = isAcross ? col + i : col;
+        const charToPlace = word[i]; let r = isAcross ? row : row + i; let c = isAcross ? col + i : col;
+        if (r < 0 || r >= size || c < 0 || c >= size) { console.error(`isValid bounds check failed: r=${r}, c=${c}, size=${size}`); return false; }
         if (currentGrid[r][c] !== '' && currentGrid[r][c] !== charToPlace) {
-            // This check should ideally be redundant if getMatchingWords works correctly,
-            // but it's a safety measure.
-            // console.log(`Conflict detected in isValid at [${r},${c}] for word ${word}`);
-            return false;
+             console.log(`    isValid FAIL: Conflict at [${r},${c}] (grid='${currentGrid[r][c]}', word='${charToPlace}')`); // DEBUG
+             return false;
         }
     }
-
-    // Create a temporary grid to test the placement
+    // Temp grid
     let tempGrid = currentGrid.map(r => [...r]);
+    for (let i = 0; i < size; i++) { let r = isAcross ? row : row + i; let c = isAcross ? col + i : col; tempGrid[r][c] = word[i]; }
+
+    // Check crossing word possibilities
     for (let i = 0; i < size; i++) {
-        let r = isAcross ? row : row + i;
-        let c = isAcross ? col + i : col;
-        tempGrid[r][c] = word[i];
-    }
+        let r_check = isAcross ? row : row + i; let c_check = isAcross ? col + i : col;
+        let crossPattern = Array(size).fill(''); let crossingWordHasContent = false; let isCrossingWordComplete = true;
+        let crossDirection = isAcross ? 'DOWN' : 'ACROSS'; let crossIndex = isAcross ? c_check : r_check;
 
-    // Now, for each cell affected by the placed word, check the crossing word's possibility
-    for (let i = 0; i < size; i++) {
-        let r_check = isAcross ? row : row + i;     // Row of the cell being checked
-        let c_check = isAcross ? col + i : col;     // Column of the cell being checked
+        if (isAcross) { for (let k = 0; k < size; k++) { const char = tempGrid[k][c_check] || ''; crossPattern[k] = char; if (char !== '') crossingWordHasContent = true; else isCrossingWordComplete = false; } }
+        else { for (let k = 0; k < size; k++) { const char = tempGrid[r_check][k] || ''; crossPattern[k] = char; if (char !== '') crossingWordHasContent = true; else isCrossingWordComplete = false; } }
 
-        let crossPattern = Array(size).fill('');
-        let crossingWordHasContent = false;
-        let isCrossingWordComplete = true;
-
-        if (isAcross) {
-            // We placed ACROSS, check the vertical (DOWN) word at column c_check
-            for (let k = 0; k < size; k++) {
-                const char = tempGrid[k][c_check] || '';
-                crossPattern[k] = char;
-                if (char !== '') crossingWordHasContent = true;
-                else isCrossingWordComplete = false; // If any char is empty, it's not complete
-            }
-        } else {
-            // We placed DOWN, check the horizontal (ACROSS) word at row r_check
-            for (let k = 0; k < size; k++) {
-                const char = tempGrid[r_check][k] || '';
-                crossPattern[k] = char;
-                if (char !== '') crossingWordHasContent = true;
-                else isCrossingWordComplete = false; // If any char is empty, it's not complete
-            }
-        }
-
-        // Perform the check if the crossing word has letters in it
         if (crossingWordHasContent) {
-            // Use getMatchingWords to see if *any* valid word fits the crossing pattern.
-            // Pass the *full* original word list for checking possibilities.
-            // Exclude words already definitively placed on the board.
-            const potentialCrossingWords = getMatchingWords(crossPattern, wordList, usedWordsSet);
+            const crossingPatternStr = `[${crossPattern.map(p => p || '_').join(',')}]`;
+            console.log(`    isValid CHECK: Crossing ${crossDirection} at index ${crossIndex}. Pattern: ${crossingPatternStr}`); // DEBUG
+            const relevantWordList = availableWordsFullList.filter(w => w.length === size);
+            const potentialCrossingWords = getMatchingWords(crossPattern, relevantWordList, null); // Check ALL possibilities
 
-            // If NO words can possibly fit this crossing pattern now, the placement is invalid.
             if (potentialCrossingWords.length === 0) {
-                 // console.log(`Placing '${word}' invalidates crossing word at ${isAcross ? `col ${c_check}` : `row ${r_check}`} (pattern: [${crossPattern.join(', ')}]). No possibilities found.`);
-                 return false;
+                console.log(`    isValid FAIL for '${word}': Crossing ${crossDirection} at index ${crossIndex} (pattern: ${crossingPatternStr}) has NO possibilities in dictionary.`); // DEBUG
+                return false;
+            } else {
+                 // console.log(`      isValid INFO: Crossing ${crossDirection} at ${crossIndex} has ${potentialCrossingWords.length} possibilities.`); // Optional extra debug
             }
 
-            // If the crossing word is now complete, check if it's a valid word itself
-            // (This check might be slightly redundant if getMatchingWords works perfectly, but adds robustness)
             if (isCrossingWordComplete) {
                 const completedWord = crossPattern.join('');
                 if (!wordList.includes(completedWord)) {
-                    // console.log(`Placing '${word}' creates invalid complete crossing word '${completedWord}' at ${isAcross ? `col ${c_check}` : `row ${r_check}`}.`);
+                    console.log(`    isValid FAIL for '${word}': Creates invalid complete crossing ${crossDirection} word '${completedWord}' at index ${crossIndex}.`); // DEBUG
                     return false;
+                } else {
+                    // console.log(`      isValid INFO: Completed crossing ${crossDirection} word '${completedWord}' is valid.`); // Optional extra debug
                 }
             }
         }
     }
-
-    // If all crossing words are still possible after placing the word, it's valid.
+    console.log(`  isValid PASS for '${word}'`); // DEBUG
     return true;
 }
+// --- End isValid FUNCTION ---
 
 
 async function generateCrossword(requestedSize = 4) {
   console.log(`Starting generateCrossword with size: ${requestedSize}`);
-  const size = parseInt(requestedSize); // Ensure it's a number
-  globalSize = size; // Update global size for isValidPrefix
+  const size = parseInt(requestedSize);
+  globalSize = size;
 
-  if (![4, 5, 6].includes(size)) {
-    console.log(`Invalid size requested: ${size}`);
-    throw new Error('Invalid grid size. Must be 4, 5, or 6.');
-  }
-
-  console.log('Initializing grid and usedWords');
+  // --- (Grid initialization, word filtering, start word selection - remains the same) ---
+  if (![4, 5, 6].includes(size)) throw new Error('Invalid grid size. Must be 4, 5, or 6.');
   const grid = Array(size).fill().map(() => Array(size).fill(''));
-  const usedWords = { across: Array(size).fill(undefined), down: Array(size).fill(undefined) }; // Use arrays initialized with undefined
-  const usedWordsSet = new Set(); // Faster lookup for used words
-
-  // Filter words for correct length from the master list
-  console.log(`Filtering words for length ${size}`);
-  // Make a copy of the wordList filtered by size for this generation attempt
+  const usedWords = { across: Array(size).fill(null), down: Array(size).fill(null) };
+  const usedWordsSet = new Set();
   let availableSizeWords = wordList.filter(word => word.length === size);
-  console.log(`Found ${availableSizeWords.length} words of length ${size}`);
-
-  if (availableSizeWords.length < size * 2) { // Need at least enough for one pass
-    console.log(`Insufficient words: only ${availableSizeWords.length} words available`);
-    throw new Error(`Not enough ${size}-letter words available to create a crossword`);
-  }
-
-  // Start with a random word for the first row (ACROSS)
-  console.log('Selecting initial random word for the first row');
-  if (availableSizeWords.length === 0) {
-      console.error("No words of the required size available to start.");
-      throw new Error(`No ${size}-letter words found in the list.`);
-  }
+  const requiredWords = Math.max(size * 2, 10);
+  if (availableSizeWords.length < requiredWords) throw new Error(`Not enough ${size}-letter words available (need ${requiredWords})`);
+  if (availableSizeWords.length === 0) throw new Error(`No ${size}-letter words found.`);
   const startWordIndex = Math.floor(Math.random() * availableSizeWords.length);
   const startWord = availableSizeWords[startWordIndex];
-
   console.log(`Initial word selected: ${startWord}`);
+  for (let i = 0; i < size; i++) grid[0][i] = startWord[i];
+  usedWords.across[0] = startWord; usedWordsSet.add(startWord);
+  console.log(`Added ${startWord} to used set.`);
+  // --- (End of unchanged section) ---
 
-  for (let i = 0; i < size; i++) {
-    grid[0][i] = startWord[i];
-  }
-  usedWords.across[0] = startWord; // Assign directly to index 0
-  usedWordsSet.add(startWord);
 
-  // Remove the used starting word from the *local available pool* for this generation
-  availableSizeWords.splice(startWordIndex, 1);
-  console.log(`Removed ${startWord} from available pool. Pool size now: ${availableSizeWords.length}`);
+  // --- solve FUNCTION with Reinstated DEBUG LOGGING ---
+  function solve(pos = 0) {
+    if (pos === size * 2) { console.log('Successfully placed all required word slots!'); console.log('Final grid:'); console.log(grid.map(row => row.map(c => c || '_').join(' ')).join('\n')); return true; }
 
-  function solve(pos = 0) { // Default pos=0 is fine for recursion itself
-    //console.log(`\n=== Solve attempt at position: ${pos} ===`); // Keep this log if useful
-    if (pos === size * 2) { // Base case: filled all slots (size ACROSS + size DOWN)
-      console.log('Successfully placed all required word slots!');
-      console.log('Final grid:');
-      console.log(grid.map(row => row.join(' ')).join('\n'));
-      //console.log('Used words object:', usedWords); // Log the object structure if needed
-      return true; // Successfully filled the grid
-    }
+    const isAcross = pos % 2 === 0; const index = Math.floor(pos / 2);
+    const start_row = isAcross ? index : 0; const start_col = isAcross ? 0 : index;
 
-    // Determine orientation and position based on 'pos'
-    // This assumes ACROSS 0, DOWN 0, ACROSS 1, DOWN 1, ...
-    const isAcross = pos % 2 === 0;
-    const index = Math.floor(pos / 2); // Which row (if Across) or col (if Down)
+    console.log(`\n--- Position ${pos}: Trying ${isAcross ? 'ACROSS' : 'DOWN'} at ${isAcross ? `row ${index}` : `col ${index}`}`); // Keep this main log
+    console.log('Current grid state:'); // Log grid state at each step
+    console.log(grid.map(r => r.map(c => c || '_').join(' ')).join('\n'));
 
-    // Define row/col based on orientation and index
-    const row = isAcross ? index : 0; // Starting row (fixed for DOWN)
-    const col = isAcross ? 0 : index; // Starting column (fixed for ACROSS)
-
-    console.log(`Position ${pos}: Trying to place ${isAcross ? 'ACROSS' : 'DOWN'} word at ${isAcross ? `row ${index}` : `col ${index}`}`);
-    console.log('Current grid state:');
-    console.log(grid.map(r => r.map(c => c || '_').join(' ')).join('\n')); // Display grid better with '_' for empty
-
-    // Get pattern for current position from the grid
     let pattern = Array(size).fill('');
-    if (isAcross) {
-      for (let i = 0; i < size; i++) {
-        pattern[i] = grid[index][i] || ''; // Use index for row, iterate columns
-      }
-    } else {
-      for (let i = 0; i < size; i++) {
-        pattern[i] = grid[i][index] || ''; // Use index for col, iterate rows
-      }
-    }
-    console.log(`Pattern to match: [${pattern.map(p => p || '_').join(', ')}]`);
+    if (isAcross) { for (let i = 0; i < size; i++) pattern[i] = grid[index][i] || ''; }
+    else { for (let i = 0; i < size; i++) pattern[i] = grid[i][index] || ''; }
+    console.log(`Pattern to match: [${pattern.map(p => p || '_').join(', ')}]`); // Log pattern
 
-    // Find words matching the pattern from the AVAILABLE pool, excluding already used words
+    // Find candidates, EXCLUDING used words for THIS slot
     const possibleWords = getMatchingWords(pattern, availableSizeWords, usedWordsSet);
-    console.log(`Found ${possibleWords.length} possible words matching pattern (and not already used).`);
+    console.log(`Found ${possibleWords.length} possible words matching pattern (and not already used).`); // Log candidate count
 
-    // Shuffle possible words for variety
     const shuffledWords = possibleWords.sort(() => Math.random() - 0.5);
 
     for (const word of shuffledWords) {
-      // Double check: Skip if already used (should be handled by getMatchingWords now)
-      // if (usedWordsSet.has(word)) {
-      //   console.log(`Skipping already used word (should not happen?): ${word}`);
-      //   continue;
-      // }
+       console.log(`  Trying word: '${word}'`); // Log each attempt
+       const gridBackup = grid.map(innerRow => [...innerRow]);
 
-      //console.log(`\nAttempting word: ${word} at pos ${pos}`); // Verbose logging
+       // Check validity using the improved function
+       if (isValid(start_row, start_col, word, isAcross, grid, wordList, usedWordsSet)) {
+           console.log(`    Word '${word}' passed isValid check, placing it.`); // Log success
+           // Place the word
+           if (isAcross) { for (let i = 0; i < size; i++) grid[index][i] = word[i]; usedWords.across[index] = word; }
+           else { for (let i = 0; i < size; i++) grid[i][index] = word[i]; usedWords.down[index] = word; }
+           usedWordsSet.add(word);
 
-      // Save current state BEFORE trying the word
-      const gridBackup = grid.map(innerRow => [...innerRow]); // Deep copy
+           // Recurse
+           if (solve(pos + 1)) return true; // Found solution!
 
-      // Check if the word is valid to place (checks conflicts and crossing word possibilities)
-      // *** UPDATED isValid CALL ***
-      if (isValid(index, index, word, isAcross, grid, availableSizeWords, usedWordsSet)) {
-      // The row/col for isValid might need adjustment depending on how you define it,
-      // using 'index' for both assumes the word starts at [index, index] which isn't
-      // always true with the row=isAcross?index:0 logic. Let's use the correct start row/col.
-      // Corrected call:
-      // if (isValid(isAcross ? index : 0, isAcross ? 0 : index, word, isAcross, grid, availableSizeWords, usedWordsSet)) { // Use start row/col
-      // Let's rethink. The 'isValid' function itself calculates the r, c based on isAcross and loop index 'i'.
-      // It needs the *start* row/col of the word being placed.
-      // If isAcross, word starts at row=`index`, col=0.
-      // If !isAcross (Down), word starts at row=0, col=`index`.
-      // So the parameters passed should be `isValid(start_row, start_col, ...)`
+           // --- Backtracking ---
+           console.log(`\n    🔄 Backtracking from position ${pos}, removing word: ${word}`); // Log backtrack
+           usedWordsSet.delete(word);
+           if (isAcross) usedWords.across[index] = null; else usedWords.down[index] = null;
+           // Restore grid from backup
+           for (let i = 0; i < size; i++) { for (let j = 0; j < size; j++) { grid[i][j] = gridBackup[i][j]; } }
+           console.log('    Grid restored to previous state:'); // Log restore
+           console.log(grid.map(r => r.map(c => c || '_').join(' ')).join('\n'));
+       }
+       // else { // Optional: Log if isValid failed explicitly
+       //     console.log(`    Word '${word}' failed isValid check.`);
+       // }
+    }
 
-          if (isValid(isAcross ? index : 0, isAcross ? 0 : index, word, isAcross, grid, availableSizeWords, usedWordsSet)) { // Corrected start row/col
-              console.log(`Word ${word} seems valid, placing it.`);
-              // Place the word
-              if (isAcross) {
-                  for (let i = 0; i < size; i++) grid[index][i] = word[i]; // Place in row 'index'
-                  usedWords.across[index] = word; // Store by index
-                  usedWordsSet.add(word);
-              } else {
-                  for (let i = 0; i < size; i++) grid[i][index] = word[i]; // Place in column 'index'
-                  usedWords.down[index] = word; // Store by index
-                  usedWordsSet.add(word);
-              }
-
-              // Recurse to the next position
-              if (solve(pos + 1)) return true; // Success! Propagate upwards
-
-              // --- Backtracking ---
-              console.log(`\n🔄 Backtracking from position ${pos}, removing word: ${word}`);
-              usedWordsSet.delete(word); // Remove from used set
-              if (isAcross) {
-                  usedWords.across[index] = undefined; // Clear the word slot
-                  // Must clear the grid letters only if they weren't part of an existing crossing word
-                  for (let i = 0; i < size; i++) {
-                      // Check if the crossing (down) word at this column index exists
-                      if (!usedWords.down[i]) { // If no down word uses this cell yet
-                          grid[index][i] = ''; // Clear the cell
-                      } else {
-                          // If a down word exists, restore the original letter from backup
-                          grid[index][i] = gridBackup[index][i];
-                      }
-                  }
-
-              } else { // Backtracking a DOWN word
-                  usedWords.down[index] = undefined; // Clear the word slot
-                   for (let i = 0; i < size; i++) {
-                      // Check if the crossing (across) word at this row index exists
-                      if (!usedWords.across[i]) { // If no across word uses this cell yet
-                           grid[i][index] = ''; // Clear the cell
-                      } else {
-                           // Restore from backup if an across word exists
-                           grid[i][index] = gridBackup[i][index];
-                      }
-                   }
-              }
-              // Restore the grid state precisely (simpler than conditional clearing)
-              for (let i = 0; i < size; i++) {
-                  for (let j = 0; j < size; j++) {
-                      grid[i][j] = gridBackup[i][j];
-                  }
-              }
-
-              console.log('Grid restored to previous state:');
-              console.log(grid.map(r => r.map(c => c || '_').join(' ')).join('\n')); // Log restored grid
-          } else {
-              // console.log(`Word ${word} is not valid according to isValid check.`); // Optional log
-          }
-      } // End loop through shuffledWords
-
-      console.log(`Failed to find a suitable word for position ${pos}. Backtracking further.`);
-      return false; // Failed to find a word for this position
+    console.log(`--- Position ${pos}: Failed to find a suitable word. Backtracking further.`); // Log failure for this position
+    return false; // Failed for this position
   }
+  // --- End solve FUNCTION ---
+
 
   // *** START THE RECURSIVE SOLVER ***
-  // Start from position 1 because position 0 (first ACROSS) was pre-filled.
-  console.log("Starting recursive solver from position 1 (attempting first DOWN word)...");
-  const success = solve(1); // Call solve starting from the first DOWN word slot
+  console.log("Starting recursive solver from position 1...");
+  const success = solve(1); // Start after placing A0
 
   if (!success) {
     console.error('Failed to place all words during the recursive solve process.');
-    // Consider trying again with a different start word or relaxing constraints
-    throw new Error('Could not generate a valid crossword with the current word list and constraints.');
+    // It's useful to log the grid state at the point of failure
+    console.error('Grid state at failure point:');
+    console.error(grid.map(row => row.map(c => c || '_').join(' ')).join('\n'));
+    throw new Error('Could not generate a valid crossword with the current word list and constraints.'); // Throw error
   }
 
-  // --- Post-generation: Generate Clues and Numbering ---
-  console.log("Crossword grid generated successfully. Generating clues and numbering...");
+  // --- Post-generation: Numbering & Finding Final Words ---
+  console.log("Crossword grid generated successfully. Numbering and finding words...");
   const numbering = Array(size).fill().map(() => Array(size).fill(0));
-  const clues = { across: [], down: [] };
   let currentNumber = 1;
-  const starts = {}; // Keep track of starts: "row,col" -> number
+  const starts = {};
+  const wordsForClues = { across: {}, down: {} }; // Store words for clue gen
 
-  const finalWords = { across: {}, down: {} }; // Store final words with their numbers
-
-  // Number the squares and identify word starts
   for (let r = 0; r < size; r++) {
       for (let c = 0; c < size; c++) {
-          // A cell gets a number if a word starts there (ACROSS or DOWN)
-          // Condition for ACROSS start: It's the first column OR the cell to the left is empty/null. AND the cell itself is not empty.
-          const isAcrossStart = grid[r][c] && (c === 0 || !grid[r][c - 1]);
-          // Condition for DOWN start: It's the first row OR the cell above is empty/null. AND the cell itself is not empty.
-          const isDownStart = grid[r][c] && (r === 0 || !grid[r - 1][c]);
-
+          if (!grid[r][c]) continue;
+          const isAcrossStart = (c === 0 || !grid[r][c - 1]); const isDownStart = (r === 0 || !grid[r - 1][c]);
           if (isAcrossStart || isDownStart) {
-              if (!starts[`${r},${c}`]) { // Assign number only if not already assigned
-                  numbering[r][c] = currentNumber;
-                  starts[`${r},${c}`] = currentNumber;
-
-                  // Find the word associated with this start position
-                  if (isAcrossStart) {
-                      let word = '';
-                      for (let k = c; k < size && grid[r][k]; k++) {
-                          word += grid[r][k];
-                      }
-                       // Check if this word length matches grid size and is actually used
-                       if (word.length === size && usedWords.across.includes(word)) {
-                           finalWords.across[currentNumber] = word;
-                       } else if (word.length > 1) { // Handle partial words or ensure it's a real word start
-                            // This might need refinement if partial words are allowed.
-                            // For now, assume only full-size words are intended.
-                            if (usedWords.across.includes(word)) { // Double check if it's in our list
-                                finalWords.across[currentNumber] = word;
-                            }
-                       }
-                  }
-                  if (isDownStart) {
-                      let word = '';
-                      for (let k = r; k < size && grid[k][c]; k++) {
-                          word += grid[k][c];
-                      }
-                       if (word.length === size && usedWords.down.includes(word)) {
-                           finalWords.down[currentNumber] = word;
-                       } else if (word.length > 1) {
-                           if (usedWords.down.includes(word)) {
-                               finalWords.down[currentNumber] = word;
-                           }
-                       }
-                  }
-                  currentNumber++;
-              } else {
-                 // If number exists, still check if this position ALSO starts another word direction
-                 const existingNumber = starts[`${r},${c}`];
-                 if (isAcrossStart && !finalWords.across[existingNumber]) {
-                     let word = '';
-                     for (let k = c; k < size && grid[r][k]; k++) { word += grid[r][k]; }
-                     if (usedWords.across.includes(word)) finalWords.across[existingNumber] = word;
-                 }
-                 if (isDownStart && !finalWords.down[existingNumber]) {
-                      let word = '';
-                      for (let k = r; k < size && grid[k][c]; k++) { word += grid[k][c]; }
-                      if (usedWords.down.includes(word)) finalWords.down[existingNumber] = word;
-                 }
+              const startKey = `${r},${c}`; let numToUse = starts[startKey];
+              if (!numToUse) { numToUse = currentNumber++; numbering[r][c] = numToUse; starts[startKey] = numToUse; }
+              else { if (numbering[r][c] === 0) numbering[r][c] = numToUse; }
+              if (isAcrossStart && !wordsForClues.across[numToUse]) {
+                  let word = ''; for (let k = c; k < size && grid[r][k]; k++) word += grid[r][k];
+                  if (usedWords.across.includes(word) || (usedWords.across[r] === word)) wordsForClues.across[numToUse] = word;
+              }
+              if (isDownStart && !wordsForClues.down[numToUse]) {
+                  let word = ''; for (let k = r; k < size && grid[k][c]; k++) word += grid[k][c];
+                   if (usedWords.down.includes(word) || (usedWords.down[c] === word)) wordsForClues.down[numToUse] = word;
               }
           }
       }
   }
+  // --- End Numbering & Finding Final Words ---
 
 
-  // Generate clues for the identified words async
-  const generateAllClues = async () => {
-    const cluePromises = [];
-    for (const num in finalWords.across) {
-        const word = finalWords.across[num];
-        cluePromises.push(
-            generateClue(word).then(clue => ({ direction: 'across', number: parseInt(num), clue, word }))
-        );
-    }
-    for (const num in finalWords.down) {
-        const word = finalWords.down[num];
-        cluePromises.push(
-            generateClue(word).then(clue => ({ direction: 'down', number: parseInt(num), clue, word }))
-        );
-    }
-    return await Promise.all(cluePromises);
-  };
+  // --- Generate Clues Asynchronously ---
+  const cluePromises = [];
+  let clueCount = 0;
+  console.log("Generating clues asynchronously...");
+  for (const numStr in wordsForClues.across) {
+      const num = parseInt(numStr); const word = wordsForClues.across[num];
+      if (word) { clueCount++; cluePromises.push(generateClue(word).then(clue => ({ direction: 'across', number: num, clue })).catch(err => ({ direction: 'across', number: num, clue: `Error fetching clue for ACROSS ${num}` }))); }
+  }
+  for (const numStr in wordsForClues.down) {
+      const num = parseInt(numStr); const word = wordsForClues.down[num];
+      if (word) { clueCount++; cluePromises.push(generateClue(word).then(clue => ({ direction: 'down', number: num, clue })).catch(err => ({ direction: 'down', number: num, clue: `Error fetching clue for DOWN ${num}` }))); }
+  }
 
-  // Wait for all clues to be generated
-  const generatedClues = await generateAllClues();
+  const settledClues = await Promise.allSettled(cluePromises);
 
-  // Populate the clues object
-  generatedClues.forEach(item => {
-      if (item.direction === 'across') {
-          clues.across.push({ number: item.number, clue: item.clue, word: item.word });
-      } else {
-          clues.down.push({ number: item.number, clue: item.clue, word: item.word });
-      }
+  // Process Clues and Prepare Response
+  const finalClues = { across: [], down: [] };
+  let successfulClues = 0;
+  settledClues.forEach(result => {
+      if (result.status === 'fulfilled' && result.value) {
+          const item = result.value;
+          const isErrorClue = item.clue.toLowerCase().startsWith('error') || item.clue.toLowerCase().includes('timeout') || item.clue.toLowerCase().startsWith('no response') || item.clue.toLowerCase().startsWith('api error') || item.clue.toLowerCase().startsWith('setup error') || item.clue.toLowerCase().startsWith('clue for') || item.clue.toLowerCase().startsWith('invalid word');
+          if (!isErrorClue) successfulClues++; else console.warn(`Clue generation failed/fallback for number ${item.number} (${item.direction}): ${item.clue}`);
+          if (item.direction === 'across') finalClues.across.push({ number: item.number, clue: item.clue });
+          else finalClues.down.push({ number: item.number, clue: item.clue });
+      } else if (result.status === 'rejected') { console.error("Clue generation promise rejected:", result.reason); }
   });
 
+  finalClues.across.sort((a, b) => a.number - b.number);
+  finalClues.down.sort((a, b) => a.number - b.number);
+  console.log(`Clue generation complete. ${successfulClues}/${clueCount} clues successfully generated.`);
 
-  // Sort clues by number
-  clues.across.sort((a, b) => a.number - b.number);
-  clues.down.sort((a, b) => a.number - b.number);
-
-
-  console.log("Clue generation complete.");
-  return {
-    grid,
-    // words: usedWords, // Might be less useful now with finalWords
-    numbering,
-    clues
-  };
+  // *** Return grid, numbering, and clues (without words) ***
+  return { grid, numbering, clues: finalClues };
+  // --- End Clue Generation and Response Preparation ---
 }
+
 
 app.get('/generate', async (req, res) => {
   if (wordList.length === 0) {
     console.warn("Generate request received before word list loaded.");
     return res.status(503).json({ error: 'Word list not loaded yet. Please try again shortly.' });
   }
-
   try {
-    const size = parseInt(req.query.size) || 4; // Default to 4x4
+    const size = parseInt(req.query.size) || 4;
     console.log(`Received request to generate crossword with size ${size}`);
-    const crossword = await generateCrossword(size);
-    console.log("Successfully generated crossword for request.");
-    res.json(crossword);
+    const crosswordData = await generateCrossword(size); // Call generateCrossword
+    console.log("Successfully generated crossword data for request.");
+    res.json(crosswordData); // Send the object { grid, numbering, clues }
   } catch (error) {
-    console.error('Error during crossword generation:', error);
-    // Send back the specific error message from the generator if available
+    console.error('Error during crossword generation endpoint:', error);
+    // Log the grid state if the error came from generateCrossword failure
+    if (error.message.startsWith('Could not generate')) {
+         console.error("Crossword generation failed. See logs above for details.");
+    }
     res.status(500).json({ error: error.message || 'Failed to generate valid crossword. Please try again.' });
   }
 });
@@ -510,14 +342,13 @@ app.get('/generate', async (req, res) => {
 fetchWords().then(() => {
   if (wordList.length === 0) {
       console.error("Word list is empty after attempting to load. Check words.txt.");
-      // Optionally exit or prevent server start
-      process.exit(1); // Exit if words are critical
+      process.exit(1);
   }
-  const PORT = process.env.PORT || 5000; // Use environment variable for port if available
+  const PORT = process.env.PORT || 5000;
   app.listen(PORT, '0.0.0.0', () => {
     console.log(`Server running on port ${PORT}`);
   });
 }).catch(error => {
   console.error('Failed to fetch words or start server:', error);
-  process.exit(1); // Exit if essential setup fails
+  process.exit(1);
 });

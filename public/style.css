@@ -1,86 +1,167 @@
-
-.container {
-  max-width: 800px;
-  margin: 0 auto;
-  padding: 10px;
-  text-align: center;
+body {
+  font-family: sans-serif;
+  background-color: #f4f4f4;
+  color: #333;
 }
 
-.grid {
-  display: inline-grid;
-  gap: 2px;
-  margin: 20px 0;
+.container {
+max-width: 900px; /* Slightly wider for clues */
+margin: 20px auto; /* Add top/bottom margin */
+padding: 15px;
+text-align: center;
+background-color: #fff;
+box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+border-radius: 8px;
+}
+
+.controls {
+  margin-bottom: 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 15px; /* Add space between controls */
 }
 
 .grid-selector {
-  padding: 8px;
-  margin: 10px;
-  font-size: 16px;
+padding: 8px;
+/* margin: 10px; */ /* Use gap in controls instead */
+font-size: 16px;
+border-radius: 4px;
+border: 1px solid #ccc;
 }
 
-@media (max-width: 600px) {
-  .container {
-    padding: 5px;
-  }
-  
-  .cell {
-    width: 40px;
-    height: 40px;
-  }
-  
-  .letter {
-    font-size: 18px;
-  }
-  
-  .clues {
-    flex-direction: column;
-    gap: 20px;
-  }
+#generateBtn { /* Give button an ID for easier selection */
+padding: 10px 20px;
+font-size: 16px;
+cursor: pointer;
+background-color: #5cb85c;
+color: white;
+border: none;
+border-radius: 4px;
+transition: background-color 0.2s ease;
+}
+
+#generateBtn:hover {
+  background-color: #4cae4c;
+}
+
+#generateBtn:disabled { /* Style for disabled button */
+  background-color: #cccccc;
+  cursor: not-allowed;
+}
+
+
+.grid {
+display: inline-grid; /* Use inline-grid to center it */
+border: 2px solid #555; /* Add border around the whole grid */
+margin: 20px 0;
+background-color: #555; /* Background for gaps */
+gap: 1px; /* Controls thickness of lines between cells */
 }
 
 .cell {
-  width: 60px;
-  height: 60px;
-  border: 1px solid #000;
-  display: flex;
-  flex-direction: column;
-  background: white;
-  position: relative;
+/* width/height set dynamically */
+/* border: 1px solid #000; */ /* Replaced by gap/background */
+display: flex; /* Use flex for centering input */
+/* flex-direction: column; */ /* Not needed with input */
+background: white;
+position: relative;
+box-sizing: border-box; /* Include padding/border in size */
+justify-content: center; /* Center input horizontally */
+align-items: center; /* Center input vertically */
+}
+
+.cell.block { /* Style for non-letter cells */
+  background-color: #333; /* Dark background */
 }
 
 .number {
-  position: absolute;
-  top: 2px;
-  left: 2px;
-  font-size: 12px;
-  font-weight: bold;
+position: absolute;
+top: 1px; /* Adjust positioning */
+left: 2px;
+font-size: 10px; /* Smaller number */
+font-weight: bold;
+color: #555; /* Slightly lighter number */
+z-index: 1; /* Ensure number is above input background */
+pointer-events: none; /* Prevent number from blocking input clicks */
 }
 
-.letter {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 24px;
+.cell input { /* Style the input fields */
+  width: 100%;
+  height: 100%;
+  border: none;
+  text-align: center;
+  font-size: 20px; /* Adjust as needed */
+  font-family: inherit;
+  text-transform: uppercase; /* Show uppercase letters */
+  padding: 0;
+  margin: 0;
+  background-color: transparent; /* Make input background transparent */
+  outline: none; /* Remove focus outline */
+  caret-color: #333; /* Make cursor visible */
+  box-sizing: border-box;
 }
 
-.clues {
-  text-align: left;
-  margin-top: 20px;
-  display: flex;
-  gap: 40px;
+.cell input.correct-letter { /* Style for correct letter feedback */
+  background-color: lightgreen !important; /* Use !important if needed */
+  color: #111; /* Ensure text is visible on green */
+}
+
+
+#cluesContainer { /* Updated ID */
+text-align: left;
+margin-top: 30px;
+display: flex;
+flex-wrap: wrap; /* Allow wrapping on smaller screens */
+gap: 30px; /* Space between Across/Down */
+justify-content: space-around; /* Distribute space */
 }
 
 .clue-section {
-  flex: 1;
+flex: 1; /* Allow sections to grow */
+min-width: 250px; /* Minimum width before wrapping */
+}
+
+.clue-section h3 {
+  border-bottom: 1px solid #eee;
+  padding-bottom: 5px;
+  margin-bottom: 10px;
 }
 
 .clue-section p {
-  margin: 10px 0;
+margin: 8px 0; /* Adjust spacing */
+font-size: 14px; /* Slightly smaller clue text */
+line-height: 1.4;
 }
 
-button {
-  padding: 10px 20px;
-  font-size: 16px;
-  cursor: pointer;
+/* Responsive Adjustments */
+@media (max-width: 600px) {
+.container {
+  padding: 10px;
+  margin: 10px auto;
+}
+
+.controls {
+    flex-direction: column;
+    gap: 10px;
+}
+
+/* Cell size adjusted dynamically in JS */
+
+.cell input {
+  font-size: 18px;
+}
+
+#cluesContainer {
+  flex-direction: column;
+  gap: 20px;
+}
+
+.clue-section {
+    min-width: unset; /* Remove min-width on small screens */
+}
+
+.number {
+    font-size: 9px;
+}
 }
