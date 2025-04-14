@@ -8,15 +8,13 @@ async function generateCrossword() {
     document.getElementById('words').innerHTML = '';
     
     const response = await fetch(`/generate?size=${gridSize}`);
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Failed to generate crossword');
+    }
+    
     const data = await response.json();
-    
-    if (!response.ok || data.error) {
-      throw new Error(data.error || 'Failed to generate crossword');
-    }
-    
-    if (data.error) {
-      throw new Error(data.error);
-    }
+    console.log('Received crossword data:', data);
     
     const gridElement = document.getElementById('grid');
     gridElement.innerHTML = '';

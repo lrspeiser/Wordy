@@ -147,13 +147,15 @@ async function generateCrossword(size = 4) {
       // Save current state
       const gridBackup = grid.map(row => [...row]);
       
+      console.log(`Trying word: ${word}`);
       if (isValid(row, col, word, isAcross)) {
+        console.log(`Word ${word} is valid, placing it`);
         // Place the word
         if (isAcross) {
-          for (let i = 0; i < 4; i++) grid[row][i] = word[i];
+          for (let i = 0; i < size; i++) grid[row][i] = word[i];
           usedWords.across.push(word);
         } else {
-          for (let i = 0; i < 4; i++) grid[i][col] = word[i];
+          for (let i = 0; i < size; i++) grid[i][col] = word[i];
           usedWords.down.push(word);
         }
 
