@@ -11,7 +11,6 @@ async function generateCrossword() {
     if (!response.ok || data.error) {
       throw new Error(data.error || 'Failed to generate crossword');
     }
-    const data = await response.json();
     
     if (data.error) {
       throw new Error(data.error);
