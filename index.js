@@ -79,15 +79,11 @@ function generateCrossword() {
     }
 
     if (!isValid) {
-        isValid = false;
-        break;
-      }
-
-      const word = possibleWords[Math.floor(Math.random() * possibleWords.length)];
-      usedWords.down.push(word);
+      attempts++;
+      continue;
     }
 
-    if (isValid && usedWords.across.length === 4 && usedWords.down.length === 4) {
+    if (usedWords.across.length === 4 && usedWords.down.length === 4) {
       console.log(`Generated valid crossword in ${attempts + 1} attempts`);
       return { grid, words: usedWords };
     }
