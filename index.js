@@ -10,13 +10,16 @@ app.use(express.static('public'));
 
 let wordList = [];
 
-// Fetch words from GitHub
+const fs = require('fs');
+
+// Read words from local file
 async function fetchWords() {
   try {
-    const response = await axios.get('https://raw.githubusercontent.com/first20hours/google-10000-english/master/google-10000-english-usa-no-swears-short.txt');
-    wordList = response.data.split('\n').filter(word => word.length === 4);
+    const data = await fs.promises.readFile('words.txt', 'utf8');
+    wordList = data.split('\n').filter(word => word.length === 4);
+    console.log(`Loaded ${wordList.length} four-letter words`);
   } catch (error) {
-    console.error('Error fetching words:', error);
+    console.error('Error reading words file:', error);
   }
 }
 
