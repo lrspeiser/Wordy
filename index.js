@@ -40,8 +40,8 @@ const fs = require('fs');
 async function fetchWords() {
   try {
     const data = await fs.promises.readFile('words.txt', 'utf8');
-    wordList = data.split('\n').filter(word => word.length === 4);
-    console.log(`Loaded ${wordList.length} four-letter words`);
+    wordList = data.split('\n');
+    console.log(`Loaded ${wordList.length} words`);
   } catch (error) {
     console.error('Error reading words file:', error);
   }
@@ -78,7 +78,7 @@ async function generateCrossword(size = 4) {
   
   function isValid(row, col, word, isAcross) {
     // Check if word fits and creates valid prefixes in crossing direction
-    for (let i = 0; i < 4; i++) {
+    for (let i = 0; i < size; i++) {
       if (isAcross) {
         grid[row][i] = word[i];
         let verticalPrefix = '';
@@ -103,20 +103,20 @@ async function generateCrossword(size = 4) {
   }
 
   function solve(pos = 0) {
-    if (pos === 8) return true; // All words placed
+    if (pos === size * 2) return true; // All words placed
 
     const row = Math.floor(pos / 2);
     const col = Math.floor(pos / 2);
     const isAcross = pos % 2 === 0;
 
     // Get pattern for current position
-    let pattern = Array(4).fill('');
+    let pattern = Array(size).fill('');
     if (isAcross) {
-      for (let i = 0; i < 4; i++) {
+      for (let i = 0; i < size; i++) {
         pattern[i] = grid[row][i] || '';
       }
     } else {
-      for (let i = 0; i < 4; i++) {
+      for (let i = 0; i < size; i++) {
         pattern[i] = grid[i][col] || '';
       }
     }
