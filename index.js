@@ -25,7 +25,7 @@ async function fetchWords() {
 
 function generateCrossword() {
   let attempts = 0;
-  const maxAttempts = 100;
+  const maxAttempts = 1000;
 
   while (attempts < maxAttempts) {
     const grid = Array(4).fill().map(() => Array(4).fill(''));
@@ -35,12 +35,16 @@ function generateCrossword() {
     // Place words across
     for (let row = 0; row < 4; row++) {
       const availableWords = wordList.filter(word => 
-        !usedWords.across.includes(word) && !usedWords.down.includes(word)
+        word.length === 4 &&
+        !usedWords.across.includes(word) && 
+        !usedWords.down.includes(word)
       );
+      
       if (availableWords.length === 0) {
         isValid = false;
         break;
       }
+      
       const word = availableWords[Math.floor(Math.random() * availableWords.length)];
       for (let col = 0; col < 4; col++) {
         grid[row][col] = word[col];
@@ -55,15 +59,14 @@ function generateCrossword() {
 
     // Check and place words down
     for (let col = 0; col < 4; col++) {
-      let vertical = '';
-      for (let row = 0; row < 4; row++) {
-        vertical += grid[row][col];
-      }
-      
       const possibleWords = wordList.filter(word => 
+        word.length === 4 &&
         !usedWords.across.includes(word) && 
         !usedWords.down.includes(word) &&
-        word.split('').every((letter, i) => letter === grid[i][col])
+        word[0] === grid[0][col] &&
+        word[1] === grid[1][col] &&
+        word[2] === grid[2][col] &&
+        word[3] === grid[3][col]
       );
 
       if (possibleWords.length === 0) {
