@@ -1,4 +1,3 @@
-
 const express = require('express');
 const axios = require('axios');
 const cors = require('cors');
@@ -52,12 +51,14 @@ function isValidPrefix(prefix) {
 }
 
 function getMatchingWords(pattern) {
-  const size = pattern.length;
-  return wordList.filter(word => 
-    word.length === size && 
-    word.split('').every((letter, i) => pattern[i] === '' || pattern[i] === letter)
-  );
-}
+    return wordList.filter(word => {
+      if (word.length !== pattern.length) return false;
+      for (let i = 0; i < word.length; i++) {
+        if (pattern[i] !== '' && pattern[i] !== word[i]) return false;
+      }
+      return true;
+    });
+  }
 
 async function generateCrossword(size = 4) {
   console.log(`Starting generateCrossword with size: ${size}`);
@@ -70,17 +71,17 @@ async function generateCrossword(size = 4) {
   console.log('Initializing grid and usedWords');
   const grid = Array(size).fill().map(() => Array(size).fill(''));
   const usedWords = { across: [], down: [] };
-  
+
   // Filter words for correct length
   console.log(`Filtering words for length ${size}`);
   const sizeWords = wordList.filter(word => word.length === size && /^[a-z]+$/.test(word));
   console.log(`Found ${sizeWords.length} words of length ${size}`);
-  
+
   if (sizeWords.length < size * 2) {
     console.log(`Insufficient words: only ${sizeWords.length} words available`);
     throw new Error(`Not enough ${size}-letter words available to create a crossword`);
   }
-  
+
   // Start with a random word
   console.log('Selecting initial random word');
   const startWord = sizeWords[Math.floor(Math.random() * sizeWords.length)];
@@ -88,7 +89,7 @@ async function generateCrossword(size = 4) {
     grid[0][i] = startWord[i];
   }
   usedWords.across.push(startWord);
-  
+
   function isValid(row, col, word, isAcross) {
     // Check if word fits and creates valid prefixes in crossing direction
     for (let i = 0; i < size; i++) {
@@ -146,10 +147,10 @@ async function generateCrossword(size = 4) {
 
     const possibleWords = getMatchingWords(pattern);
     console.log(`Found ${possibleWords.length} possible words matching pattern: ${pattern.join('')}`);
-    
+
     // Shuffle possible words for more variety
     const shuffledWords = possibleWords.sort(() => Math.random() - 0.5);
-    
+
     for (const word of shuffledWords) {
       if (usedWords.across.includes(word) || usedWords.down.includes(word)) {
         console.log(`Skipping already used word: ${word}`);
@@ -159,7 +160,7 @@ async function generateCrossword(size = 4) {
       console.log(`\nAttempting word: ${word}`);
       // Save current state
       const gridBackup = grid.map(row => [...row]);
-      
+
       console.log(`Trying word: ${word}`);
       if (isValid(row, col, word, isAcross)) {
         console.log(`Word ${word} is valid, placing it`);
@@ -206,7 +207,7 @@ async function generateCrossword(size = 4) {
     for (let j = 0; j < 4; j++) {
       const isAcrossStart = j === 0;
       const isDownStart = i === 0;
-      
+
       if (isAcrossStart || isDownStart) {
         numbering[i][j] = currentNumber;
         if (isAcrossStart) {
@@ -235,7 +236,7 @@ app.get('/generate', async (req, res) => {
   if (wordList.length === 0) {
     return res.status(503).json({ error: 'Word list not loaded yet. Please try again.' });
   }
-  
+
   try {
     const size = parseInt(req.query.size) || 4;
     const crossword = await generateCrossword(size);
