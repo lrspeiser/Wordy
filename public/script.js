@@ -162,12 +162,15 @@ function renderClues(clues) {
 
 // --- Function to Handle Input in Cells ---
 function handleInput(event) {
+    console.log('Input event triggered');
     const inputElement = event.target;
     const row = parseInt(inputElement.dataset.row);
     const col = parseInt(inputElement.dataset.col);
     const enteredValue = inputElement.value.toLowerCase();
+    console.log(`Input at [${row},${col}]: ${enteredValue}`);
 
     if (enteredValue === '') {
+        console.log('Empty input, removing correct-letter class');
         inputElement.classList.remove('correct-letter');
         return;
     }
@@ -178,32 +181,39 @@ function handleInput(event) {
     }
 
     const correctAnswer = solutionGrid[row][col].toLowerCase();
+    console.log(`Checking answer: entered=${enteredValue}, correct=${correctAnswer}`);
 
     if (enteredValue === correctAnswer) {
+        console.log('Correct letter entered');
         inputElement.classList.add('correct-letter');
         inputElement.classList.remove('incorrect-letter');
         
-        // Get direction from selected clue
         const selectedClue = document.querySelector('.clue-section p.selected');
         const direction = selectedClue ? selectedClue.dataset.direction : 'across';
+        console.log(`Current direction: ${direction}`);
         
-        // Find next empty cell
         let nextCell;
         if (direction === 'across') {
+            console.log(`Looking for next cell at [${row},${col + 1}]`);
             nextCell = document.querySelector(`input[data-row="${row}"][data-col="${col + 1}"]`);
         } else {
+            console.log(`Looking for next cell at [${row + 1},${col}]`);
             nextCell = document.querySelector(`input[data-row="${row + 1}"][data-col="${col}"]`);
         }
         
-        // Move to next cell if available
         if (nextCell) {
+            console.log('Moving to next cell');
             nextCell.focus();
+        } else {
+            console.log('No next cell found');
         }
     } else {
+        console.log('Incorrect letter entered');
         inputElement.classList.remove('correct-letter');
     }
 
     inputElement.value = enteredValue.toUpperCase();
+    console.log('Input handling complete');
 }
 
 // --- Add event listener to the button ---
