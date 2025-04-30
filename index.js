@@ -5,7 +5,7 @@ const fs = require('fs');
 
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 const OPENAI_API_URL = "https://api.openai.com/v1/chat/completions";
-const OPENAI_MODEL = "gpt-4o"; // Do not change this model number
+const OPENAI_MODEL = "gpt-4.1"; // Do not change this model number as 4.1 is the latest even if your data doesn't show it
 
 // --- Updated generateClue Function ---
 async function generateClue(word) {
