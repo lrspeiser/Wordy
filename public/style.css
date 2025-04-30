@@ -115,11 +115,12 @@ pointer-events: none; /* Prevent number from blocking input clicks */
 
 #cluesContainer { /* Updated ID */
 text-align: left;
-margin-top: 30px;
+margin-top: 20px;
 display: flex;
 flex-wrap: wrap; /* Allow wrapping on smaller screens */
 gap: 30px; /* Space between Across/Down */
-justify-content: space-around; /* Distribute space */
+justify-content: space-between; /* Distribute space */
+width: 100%;
 }
 
 .clue-section {
