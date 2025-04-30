@@ -17,7 +17,7 @@ function handleClueClick(clueElement, number, direction) {
   document.querySelectorAll('.clue-section p').forEach(p => p.classList.remove('selected'));
   // Add selection to clicked clue
   clueElement.classList.add('selected');
-  
+
   currentDirection = direction;
   selectedClueNumber = number;
   focusCell(number);
@@ -161,14 +161,14 @@ function renderClues(clues) {
       const acrossSection = document.createElement('div');
       acrossSection.className = 'clue-section';
       acrossSection.innerHTML = '<h3>Across</h3>';
-      
+
       clues.across.forEach(({number, clue}) => {
         const p = document.createElement('p');
         p.innerHTML = `<strong>${number}.</strong> ${clue || 'Clue not available'}`;
         p.onclick = () => handleClueClick(p, number, 'across');
         acrossSection.appendChild(p);
       });
-      
+
       cluesHTML.appendChild(acrossSection);
     }
 
@@ -176,14 +176,14 @@ function renderClues(clues) {
       const downSection = document.createElement('div');
       downSection.className = 'clue-section';
       downSection.innerHTML = '<h3>Down</h3>';
-      
+
       clues.down.forEach(({number, clue}) => {
         const p = document.createElement('p');
         p.innerHTML = `<strong>${number}.</strong> ${clue || 'Clue not available'}`;
         p.onclick = () => handleClueClick(p, number, 'down');
         downSection.appendChild(p);
       });
-      
+
       cluesHTML.appendChild(downSection);
     }
 
@@ -366,19 +366,6 @@ function findNextInputCell(r, c, size, dr, dc, wrap = false) {
 // --- Initial Load ---
 document.addEventListener('DOMContentLoaded', () => {
   console.log("DOM fully loaded. Setting up event listeners.");
-  
-  // Setup direction icon
-  const directionIcon = document.getElementById('directionIcon');
-  if (directionIcon) {
-    directionIcon.addEventListener('click', () => {
-      currentDirection = currentDirection === 'across' ? 'down' : 'across';
-      directionIcon.classList.toggle('down');
-      directionIcon.title = `Currently moving ${currentDirection} (click to change)`;
-    });
-  }
-
-  // *** DO NOT generate crossword on initial load ***
-  // generateCrossword(); // <--- REMOVED THIS LINE
 
   // Add event listener for the button
   const generateBtn = document.getElementById('generateBtn');
