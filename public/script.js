@@ -169,11 +169,17 @@ function handleInput(event) {
     const enteredValue = inputElement.value.toLowerCase();
     console.log(`Input at [${row},${col}]: ${enteredValue}`);
 
+    // Skip if empty (backspace/delete)
     if (enteredValue === '') {
         console.log('Empty input, removing correct-letter class');
         inputElement.classList.remove('correct-letter');
         return;
     }
+
+    // Get direction
+    const selectedClue = document.querySelector('.clue-section p.selected');
+    const direction = selectedClue ? selectedClue.dataset.direction : 'across';
+    console.log(`Current direction: ${direction}`);
 
     if (!solutionGrid || !solutionGrid[row] || typeof solutionGrid[row][col] === 'undefined') {
         console.error("Solution grid not available or invalid coordinates.");
@@ -213,6 +219,18 @@ function handleInput(event) {
     }
 
     inputElement.value = enteredValue.toUpperCase();
+    
+    // Move to next cell
+    let nextCell;
+    if (direction === 'across') {
+        nextCell = document.querySelector(`input[data-row="${row}"][data-col="${col + 1}"]`);
+    } else {
+        nextCell = document.querySelector(`input[data-row="${row + 1}"][data-col="${col}"]`);
+    }
+    
+    if (nextCell) {
+        nextCell.focus();
+    }
     console.log('Input handling complete');
 }
 
