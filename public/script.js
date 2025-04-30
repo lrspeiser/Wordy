@@ -1,6 +1,7 @@
 // Global variable to store the solution grid
 let solutionGrid = null;
 let currentGridSize = 4; // Keep track of the size
+let currentDirection = 'across'; // Track current typing direction
 
 // --- Main Function to Generate and Display ---
 async function generateCrossword() {
@@ -208,6 +209,18 @@ function handleKeyDown(event) {
     let nextCol = col;
     let moved = false;
 
+    // Toggle direction with arrow keys
+    if (event.key === 'ArrowRight' || event.key === 'ArrowLeft') {
+        currentDirection = 'across';
+        event.preventDefault();
+        return;
+    }
+    if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
+        currentDirection = 'down';
+        event.preventDefault();
+        return;
+    }
+
     switch (event.key) {
         case 'ArrowUp': nextRow = findNextInputCell(row, col, size, -1, 0)?.row ?? row; moved = (nextRow !== row); break;
         case 'ArrowDown': nextRow = findNextInputCell(row, col, size, 1, 0)?.row ?? row; moved = (nextRow !== row); break;
@@ -244,7 +257,10 @@ function handleKeyDown(event) {
 
 // --- Function to move focus to the NEXT available cell (skipping blocks) ---
 function moveToNextCell(currentRow, currentCol) {
-    const nextCell = findNextInputCell(currentRow, currentCol, currentGridSize, 0, 1, true); // Move right, wrap
+    // Move based on current direction
+    const nextCell = currentDirection === 'across' 
+        ? findNextInputCell(currentRow, currentCol, currentGridSize, 0, 1, true) // Move right
+        : findNextInputCell(currentRow, currentCol, currentGridSize, 1, 0, true); // Move down
     if (nextCell) {
         const nextInput = document.querySelector(`input[data-row="${nextCell.row}"][data-col="${nextCell.col}"]`);
         if (nextInput) {
