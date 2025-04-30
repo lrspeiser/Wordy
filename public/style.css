@@ -134,9 +134,16 @@ min-width: 250px; /* Minimum width before wrapping */
 }
 
 .clue-section p {
-margin: 8px 0; /* Adjust spacing */
-font-size: 14px; /* Slightly smaller clue text */
+margin: 8px 0;
+font-size: 14px;
 line-height: 1.4;
+cursor: pointer;
+padding: 4px;
+border-radius: 4px;
+}
+
+.clue-section p:hover {
+background-color: #f0f0f0;
 }
 
 /* Responsive Adjustments */

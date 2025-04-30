@@ -108,23 +108,54 @@ function renderGrid(gridData, numbering) {
 
 // --- Function to Render Clues ---
 function renderClues(clues) {
-    const cluesContainer = document.getElementById('cluesContainer'); // Use new ID
+    const cluesContainer = document.getElementById('cluesContainer');
     cluesContainer.innerHTML = `
       <div class="clues">
         <div class="clue-section">
           <h3>Across</h3>
-          ${clues.across.map(({number, clue}) => // Removed 'word'
-            `<p><strong>${number}.</strong> ${clue}</p>` // Removed <em>(${word})</em>
+          ${clues.across.map(({number, clue}) =>
+            `<p class="clue" data-number="${number}" data-direction="across"><strong>${number}.</strong> ${clue}</p>`
           ).join('')}
         </div>
         <div class="clue-section">
           <h3>Down</h3>
-          ${clues.down.map(({number, clue}) => // Removed 'word'
-            `<p><strong>${number}.</strong> ${clue}</p>` // Removed <em>(${word})</em>
+          ${clues.down.map(({number, clue}) =>
+            `<p class="clue" data-number="${number}" data-direction="down"><strong>${number}.</strong> ${clue}</p>`
           ).join('')}
         </div>
       </div>
     `;
+
+    // Add click handlers to clues
+    document.querySelectorAll('.clue').forEach(clue => {
+        clue.addEventListener('click', function() {
+            const number = this.dataset.number;
+            const direction = this.dataset.direction;
+            const cell = document.querySelector(`.cell input[data-number="${number}"]`);
+            
+            if (cell) {
+                currentDirection = direction;
+                // Find first empty cell in the word
+                let currentCell = cell;
+                while (currentCell && currentCell.value) {
+                    const row = parseInt(currentCell.dataset.row);
+                    const col = parseInt(currentCell.dataset.col);
+                    const nextCell = findNextInputCell(
+                        row, 
+                        col, 
+                        currentGridSize,
+                        direction === 'down' ? 1 : 0,  // Move down if direction is down
+                        direction === 'across' ? 1 : 0  // Move right if direction is across
+                    );
+                    if (!nextCell) break;
+                    currentCell = document.querySelector(`input[data-row="${nextCell.row}"][data-col="${nextCell.col}"]`);
+                }
+                if (currentCell) {
+                    currentCell.focus();
+                }
+            }
+        });
+    });
 }
 
 
