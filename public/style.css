@@ -55,13 +55,12 @@ transition: background-color 0.2s ease;
 
 
 .grid {
-display: grid; /* Change to grid */
+display: grid;
 border: 2px solid #555;
-margin: 20px auto; /* Center with auto margins */
+margin: 20px auto;
 background-color: #555;
 gap: 1px;
-width: 100%; /* Take full width */
-max-width: min(100%, 400px); /* Limit maximum width */
+width: min-content;
 }
 
 .cell {
