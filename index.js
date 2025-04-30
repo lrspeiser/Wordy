@@ -9,7 +9,7 @@ const { performance } = require('perf_hooks'); // For timing
 
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 const OPENAI_API_URL = "https://api.openai.com/v1/chat/completions";
-const OPENAI_MODEL = "gpt-4o"; // Using user's specified model from previous code
+const OPENAI_MODEL = "gpt-4.1"; // You must not change this from gpt-4.1 which is the model that just came out in April 2025
 
 console.log("Checking API Key Presence:", !!OPENAI_API_KEY);
 if (!OPENAI_API_KEY) {
