@@ -5,39 +5,13 @@ body {
 }
 
 .container {
-max-width: 900px;
-margin: 20px auto;
+max-width: 900px; /* Slightly wider for clues */
+margin: 20px auto; /* Add top/bottom margin */
 padding: 15px;
 text-align: center;
 background-color: #fff;
 box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 border-radius: 8px;
-}
-
-.clue-section p {
-  cursor: pointer;
-  padding: 3px;
-}
-
-.clue-section p:hover {
-  background-color: #f0f0f0;
-}
-
-.clue-section p.selected {
-  background-color: #e0e0e0;
-}
-
-.grid-container {
-  position: relative;
-  display: block;
-  width: 100%;
-  max-width: 600px;
-  margin: 0 auto;
-}
-
-.grid {
-  width: 100%;
-  aspect-ratio: 1;
 }
 
 .controls {
