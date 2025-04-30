@@ -324,6 +324,16 @@ function findNextInputCell(r, c, size, dr, dc, wrap = false) {
 // --- Initial Load ---
 document.addEventListener('DOMContentLoaded', () => {
   console.log("DOM fully loaded. Setting up event listeners.");
+  
+  // Setup direction icon
+  const directionIcon = document.getElementById('directionIcon');
+  if (directionIcon) {
+    directionIcon.addEventListener('click', () => {
+      currentDirection = currentDirection === 'across' ? 'down' : 'across';
+      directionIcon.classList.toggle('across');
+      directionIcon.title = `Currently moving ${currentDirection} (click to change)`;
+    });
+  }
 
   // *** DO NOT generate crossword on initial load ***
   // generateCrossword(); // <--- REMOVED THIS LINE
