@@ -295,9 +295,6 @@ function handleKeyDown(event) {
         }
     }
 }
-
-
-// --- Function to move focus to the NEXT available cell (skipping blocks) ---
 function moveToNextCell(currentRow, currentCol) {
     // Move based on current direction
     const nextCell = currentDirection === 'across' 
