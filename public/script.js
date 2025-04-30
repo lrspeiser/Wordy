@@ -296,10 +296,12 @@ function handleKeyDown(event) {
     }
 }
 function moveToNextCell(currentRow, currentCol) {
-    // Move based on current direction
+    if (!currentDirection) return; // Guard against undefined direction
+    
     const nextCell = currentDirection === 'across' 
         ? findNextInputCell(currentRow, currentCol, currentGridSize, 0, 1, true) // Move right
         : findNextInputCell(currentRow, currentCol, currentGridSize, 1, 0, true); // Move down
+    
     if (nextCell) {
         const nextInput = document.querySelector(`input[data-row="${nextCell.row}"][data-col="${nextCell.col}"]`);
         if (nextInput) {
