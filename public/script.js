@@ -131,28 +131,37 @@ function renderClues(clues) {
         clue.addEventListener('click', function() {
             const number = this.dataset.number;
             const direction = this.dataset.direction;
-            const inputs = document.querySelectorAll('.cell input');
+            // Remove any previous selections
+            document.querySelectorAll('.clue').forEach(c => c.classList.remove('selected'));
+            this.classList.add('selected');
             
+            const inputs = document.querySelectorAll('.cell input');
             inputs.forEach(input => {
                 if (input.parentElement.querySelector('.number')?.textContent === number) {
                     const startCell = input;
                     let currentCell = startCell;
+                    let foundEmptyCell = false;
 
-                    // Find first empty cell
-                    while (currentCell && currentCell.value !== '') {
+                    // Try to find first empty cell in the word
+                    while (currentCell) {
+                        if (currentCell.value === '') {
+                            foundEmptyCell = true;
+                            break;
+                        }
                         const row = parseInt(currentCell.dataset.row);
                         const col = parseInt(currentCell.dataset.col);
                         
-                        // Find next cell based on direction
+                        // Get next cell based on direction
                         const nextRow = direction === 'down' ? row + 1 : row;
                         const nextCol = direction === 'across' ? col + 1 : col;
                         
-                        currentCell = document.querySelector(`input[data-row="${nextRow}"][data-col="${nextCol}"]`);
-                        if (!currentCell) break;
+                        const nextCell = document.querySelector(`input[data-row="${nextRow}"][data-col="${nextCol}"]`);
+                        if (!nextCell) break;
+                        currentCell = nextCell;
                     }
 
                     // Focus either the first empty cell or the start cell
-                    (currentCell || startCell).focus();
+                    (foundEmptyCell ? currentCell : startCell).focus();
                 }
             });
         });
