@@ -131,29 +131,30 @@ function renderClues(clues) {
         clue.addEventListener('click', function() {
             const number = this.dataset.number;
             const direction = this.dataset.direction;
-            const cell = document.querySelector(`.cell input[data-number="${number}"]`);
+            const inputs = document.querySelectorAll('.cell input');
             
-            if (cell) {
-                currentDirection = direction;
-                // Find first empty cell in the word
-                let currentCell = cell;
-                while (currentCell && currentCell.value) {
-                    const row = parseInt(currentCell.dataset.row);
-                    const col = parseInt(currentCell.dataset.col);
-                    const nextCell = findNextInputCell(
-                        row, 
-                        col, 
-                        currentGridSize,
-                        direction === 'down' ? 1 : 0,  // Move down if direction is down
-                        direction === 'across' ? 1 : 0  // Move right if direction is across
-                    );
-                    if (!nextCell) break;
-                    currentCell = document.querySelector(`input[data-row="${nextCell.row}"][data-col="${nextCell.col}"]`);
+            inputs.forEach(input => {
+                if (input.parentElement.querySelector('.number')?.textContent === number) {
+                    const startCell = input;
+                    let currentCell = startCell;
+
+                    // Find first empty cell
+                    while (currentCell && currentCell.value !== '') {
+                        const row = parseInt(currentCell.dataset.row);
+                        const col = parseInt(currentCell.dataset.col);
+                        
+                        // Find next cell based on direction
+                        const nextRow = direction === 'down' ? row + 1 : row;
+                        const nextCol = direction === 'across' ? col + 1 : col;
+                        
+                        currentCell = document.querySelector(`input[data-row="${nextRow}"][data-col="${nextCol}"]`);
+                        if (!currentCell) break;
+                    }
+
+                    // Focus either the first empty cell or the start cell
+                    (currentCell || startCell).focus();
                 }
-                if (currentCell) {
-                    currentCell.focus();
-                }
-            }
+            });
         });
     });
 }
