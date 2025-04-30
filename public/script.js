@@ -165,16 +165,13 @@ function handleInput(event) {
     const inputElement = event.target;
     const row = parseInt(inputElement.dataset.row);
     const col = parseInt(inputElement.dataset.col);
-    const enteredValue = inputElement.value.toLowerCase(); // Ensure lowercase for comparison
+    const enteredValue = inputElement.value.toLowerCase();
 
-    // Clear previous feedback if input is cleared
     if (enteredValue === '') {
         inputElement.classList.remove('correct-letter');
-        // Potentially add 'incorrect-letter' class removal here too if you implement that
         return;
     }
 
-    // Make sure we have the solution grid
     if (!solutionGrid || !solutionGrid[row] || typeof solutionGrid[row][col] === 'undefined') {
         console.error("Solution grid not available or invalid coordinates.");
         return;
@@ -182,19 +179,30 @@ function handleInput(event) {
 
     const correctAnswer = solutionGrid[row][col].toLowerCase();
 
-    // Check if the entered letter is correct
     if (enteredValue === correctAnswer) {
         inputElement.classList.add('correct-letter');
-        inputElement.classList.remove('incorrect-letter'); // Remove incorrect if previously marked
-        // Optionally move focus to the next input cell here (advanced)
-        // moveToNextCell(row, col);
+        inputElement.classList.remove('incorrect-letter');
+        
+        // Get direction from selected clue
+        const selectedClue = document.querySelector('.clue-section p.selected');
+        const direction = selectedClue ? selectedClue.dataset.direction : 'across';
+        
+        // Find next empty cell
+        let nextCell;
+        if (direction === 'across') {
+            nextCell = document.querySelector(`input[data-row="${row}"][data-col="${col + 1}"]`);
+        } else {
+            nextCell = document.querySelector(`input[data-row="${row + 1}"][data-col="${col}"]`);
+        }
+        
+        // Move to next cell if available
+        if (nextCell) {
+            nextCell.focus();
+        }
     } else {
         inputElement.classList.remove('correct-letter');
-        // Optionally add an 'incorrect-letter' class for visual feedback
-        // inputElement.classList.add('incorrect-letter');
     }
 
-    // Keep input uppercase visually
     inputElement.value = enteredValue.toUpperCase();
 }
 
