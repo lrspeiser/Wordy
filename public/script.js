@@ -1,11 +1,27 @@
-// Global variable to store the solution grid
+// Global variables
 let solutionGrid = null;
-let currentGridSize = 4; // Keep track of the size
-let currentDirection = 'across'; // Default to across direction
-document.addEventListener('DOMContentLoaded', () => {
-  const directionIcon = document.getElementById('directionIcon');
-  if (directionIcon) directionIcon.classList.add('across');
-});
+let currentGridSize = 4;
+let currentDirection = 'across';
+let selectedClueNumber = null;
+
+function focusCell(number) {
+  const cell = document.querySelector(`input[data-number="${number}"]`);
+  if (cell) {
+    cell.focus();
+    cell.select();
+  }
+}
+
+function handleClueClick(clueElement, number, direction) {
+  // Remove previous selection
+  document.querySelectorAll('.clue-section p').forEach(p => p.classList.remove('selected'));
+  // Add selection to clicked clue
+  clueElement.classList.add('selected');
+  
+  currentDirection = direction;
+  selectedClueNumber = number;
+  focusCell(number);
+}
 
 // --- Main Function to Generate and Display ---
 async function generateCrossword() {
@@ -107,7 +123,11 @@ function renderGrid(gridData, numbering) {
           const input = document.createElement('input');
           input.type = 'text';
           input.maxLength = 1;
-          input.dataset.row = i; input.dataset.col = j;
+          input.dataset.row = i; 
+          input.dataset.col = j;
+          if (numbering[i][j]) {
+            input.dataset.number = numbering[i][j];
+          }
           input.autocomplete = 'off'; input.spellcheck = false;
           input.style.fontSize = `${inputFontSize}px`; // Set dynamic font size
           input.addEventListener('input', handleInput);
@@ -134,23 +154,41 @@ function renderClues(clues) {
         return;
     }
 
-    cluesContainer.innerHTML = `
-      <div class="clues">
-        ${hasAcrossClues ? `
-        <div class="clue-section">
-          <h3>Across</h3>
-          ${clues.across.map(({number, clue}) =>
-            `<p><strong>${number}.</strong> ${clue || 'Clue not available'}</p>` // Handle missing clue text
-          ).join('')}
-        </div>` : ''}
-        ${hasDownClues ? `
-        <div class="clue-section">
-          <h3>Down</h3>
-          ${clues.down.map(({number, clue}) =>
-            `<p><strong>${number}.</strong> ${clue || 'Clue not available'}</p>` // Handle missing clue text
-          ).join('')}
-        </div>` : ''}
-      </div>
+    const cluesHTML = document.createElement('div');
+    cluesHTML.className = 'clues';
+
+    if (hasAcrossClues) {
+      const acrossSection = document.createElement('div');
+      acrossSection.className = 'clue-section';
+      acrossSection.innerHTML = '<h3>Across</h3>';
+      
+      clues.across.forEach(({number, clue}) => {
+        const p = document.createElement('p');
+        p.innerHTML = `<strong>${number}.</strong> ${clue || 'Clue not available'}`;
+        p.onclick = () => handleClueClick(p, number, 'across');
+        acrossSection.appendChild(p);
+      });
+      
+      cluesHTML.appendChild(acrossSection);
+    }
+
+    if (hasDownClues) {
+      const downSection = document.createElement('div');
+      downSection.className = 'clue-section';
+      downSection.innerHTML = '<h3>Down</h3>';
+      
+      clues.down.forEach(({number, clue}) => {
+        const p = document.createElement('p');
+        p.innerHTML = `<strong>${number}.</strong> ${clue || 'Clue not available'}`;
+        p.onclick = () => handleClueClick(p, number, 'down');
+        downSection.appendChild(p);
+      });
+      
+      cluesHTML.appendChild(downSection);
+    }
+
+    cluesContainer.innerHTML = '';
+    cluesContainer.appendChild(cluesHTML);
     `;
 }
 

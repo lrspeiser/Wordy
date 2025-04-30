@@ -14,19 +14,17 @@ box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 border-radius: 8px;
 }
 
-.direction-icon {
-  width: 20px;
-  height: 20px;
+.clue-section p {
   cursor: pointer;
-  position: absolute;
-  left: -10px;
-  top: 2px;
-  transition: transform 0.2s;
-  transform: rotate(90deg);
+  padding: 3px;
 }
 
-.direction-icon.down {
-  transform: rotate(0deg);
+.clue-section p:hover {
+  background-color: #f0f0f0;
+}
+
+.clue-section p.selected {
+  background-color: #e0e0e0;
 }
 
 .grid-container {
