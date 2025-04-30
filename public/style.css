@@ -18,12 +18,20 @@ border-radius: 8px;
   width: 24px;
   height: 24px;
   cursor: pointer;
-  margin: 10px;
+  position: absolute;
+  left: -30px;
+  top: 50%;
+  transform: translateY(-50%);
   transition: transform 0.2s;
 }
 
 .direction-icon.across {
-  transform: rotate(-90deg);
+  transform: translateY(-50%) rotate(90deg);
+}
+
+.grid-container {
+  position: relative;
+  display: inline-block;
 }
 
 .controls {
