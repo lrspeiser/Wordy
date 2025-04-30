@@ -5,13 +5,16 @@ body {
 }
 
 .container {
-max-width: 900px; /* Slightly wider for clues */
-margin: 20px auto; /* Add top/bottom margin */
+max-width: 600px;
+margin: 20px auto;
 padding: 15px;
 text-align: center;
 background-color: #fff;
 box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 border-radius: 8px;
+display: flex;
+flex-direction: column;
+align-items: stretch;
 }
 
 .controls {
@@ -52,11 +55,13 @@ transition: background-color 0.2s ease;
 
 
 .grid {
-display: inline-grid; /* Use inline-grid to center it */
-border: 2px solid #555; /* Add border around the whole grid */
-margin: 20px 0;
-background-color: #555; /* Background for gaps */
-gap: 1px; /* Controls thickness of lines between cells */
+display: grid; /* Change to grid */
+border: 2px solid #555;
+margin: 20px auto; /* Center with auto margins */
+background-color: #555;
+gap: 1px;
+width: 100%; /* Take full width */
+max-width: min(100%, 400px); /* Limit maximum width */
 }
 
 .cell {
