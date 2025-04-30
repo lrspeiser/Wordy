@@ -19,13 +19,14 @@ border-radius: 8px;
   height: 20px;
   cursor: pointer;
   position: absolute;
-  left: -25px;
+  left: -10px;
   top: 2px;
   transition: transform 0.2s;
+  transform: rotate(90deg);
 }
 
-.direction-icon.across {
-  transform: rotate(90deg);
+.direction-icon.down {
+  transform: rotate(0deg);
 }
 
 .grid-container {

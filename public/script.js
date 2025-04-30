@@ -1,7 +1,11 @@
 // Global variable to store the solution grid
 let solutionGrid = null;
 let currentGridSize = 4; // Keep track of the size
-let currentDirection = 'across'; // Track current typing direction
+let currentDirection = 'across'; // Default to across direction
+document.addEventListener('DOMContentLoaded', () => {
+  const directionIcon = document.getElementById('directionIcon');
+  if (directionIcon) directionIcon.classList.add('across');
+});
 
 // --- Main Function to Generate and Display ---
 async function generateCrossword() {
@@ -330,7 +334,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (directionIcon) {
     directionIcon.addEventListener('click', () => {
       currentDirection = currentDirection === 'across' ? 'down' : 'across';
-      directionIcon.classList.toggle('across');
+      directionIcon.classList.toggle('down');
       directionIcon.title = `Currently moving ${currentDirection} (click to change)`;
     });
   }
