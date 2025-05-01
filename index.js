@@ -30,7 +30,7 @@ async function generateClue(word) {
     });
     if (response.data?.choices?.[0]?.message?.content) {
         const jsonResponse = JSON.parse(response.data.choices[0].message.content);
-        console.log('Raw GPT response:', jsonResponse);
+        console.log('\n=== Raw GPT Response ===\n', JSON.stringify(jsonResponse, null, 2), '\n=====================\n');
         
         if (!jsonResponse.clue) {
           console.error('Invalid JSON response format:', jsonResponse);
