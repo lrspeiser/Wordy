@@ -135,7 +135,7 @@ function renderClues(clues) {
             // Remove any previous selections
             document.querySelectorAll('.clue').forEach(c => c.classList.remove('selected'));
             this.classList.add('selected');
-            
+
             const inputs = document.querySelectorAll('.cell input');
             inputs.forEach(input => {
                 if (input.parentElement.querySelector('.number')?.textContent === number) {
@@ -151,11 +151,11 @@ function renderClues(clues) {
                         }
                         const row = parseInt(currentCell.dataset.row);
                         const col = parseInt(currentCell.dataset.col);
-                        
+
                         // Get next cell based on direction
                         const nextRow = direction === 'down' ? row + 1 : row;
                         const nextCol = direction === 'across' ? col + 1 : col;
-                        
+
                         const nextCell = document.querySelector(`input[data-row="${nextRow}"][data-col="${nextCol}"]`);
                         if (!nextCell) break;
                         currentCell = nextCell;
@@ -187,18 +187,21 @@ function handleInput(event) {
     if (enteredValue === '') {
         console.log('Empty input, removing correct-letter class');
         inputElement.classList.remove('correct-letter');
-        
-        let prevCell;
-        if (direction === 'across') {
-            prevCell = document.querySelector(`input[data-row="${row}"][data-col="${col-1}"]`);
-        } else {
-            prevCell = document.querySelector(`input[data-row="${row-1}"][data-col="${col}"]`);
-        }
-        
-        if (prevCell) {
-            prevCell.value = '';
-            prevCell.classList.remove('correct-letter');
-            prevCell.focus();
+
+        // If current cell is empty, find and clear previous cell
+        if (!inputElement.value) {
+            let prevCell;
+            if (direction === 'across') {
+                prevCell = document.querySelector(`input[data-row="${row}"][data-col="${col-1}"]`);
+            } else {
+                prevCell = document.querySelector(`input[data-row="${row-1}"][data-col="${col}"]`);
+            }
+
+            if (prevCell) {
+                prevCell.value = '';
+                prevCell.classList.remove('correct-letter');
+                prevCell.focus();
+            }
         }
         return;
     }
@@ -219,7 +222,7 @@ function handleInput(event) {
         console.log('Correct letter entered');
         inputElement.classList.add('correct-letter');
         inputElement.classList.remove('incorrect-letter');
-        
+
         // Check if puzzle is complete
         const allInputs = document.querySelectorAll('.cell input');
         const isComplete = Array.from(allInputs).every(input => {
@@ -235,11 +238,11 @@ function handleInput(event) {
                 }
             }, 100);
         }
-        
+
         const selectedClue = document.querySelector('.clue-section p.selected');
         const direction = selectedClue ? selectedClue.dataset.direction : 'across';
         console.log(`Current direction: ${direction}`);
-        
+
         let nextCell;
         if (direction === 'across') {
             console.log(`Looking for next cell at [${row},${col + 1}]`);
@@ -248,7 +251,7 @@ function handleInput(event) {
             console.log(`Looking for next cell at [${row + 1},${col}]`);
             nextCell = document.querySelector(`input[data-row="${row + 1}"][data-col="${col}"]`);
         }
-        
+
         if (nextCell) {
             console.log('Moving to next cell');
             nextCell.focus();
@@ -261,7 +264,7 @@ function handleInput(event) {
     }
 
     inputElement.value = enteredValue.toUpperCase();
-    
+
     // Move to next cell
     let nextCell;
     if (direction === 'across') {
@@ -269,7 +272,7 @@ function handleInput(event) {
     } else {
         nextCell = document.querySelector(`input[data-row="${row + 1}"][data-col="${col}"]`);
     }
-    
+
     if (nextCell) {
         nextCell.focus();
     }
