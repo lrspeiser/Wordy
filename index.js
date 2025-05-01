@@ -32,8 +32,17 @@ async function generateClue(word) {
     });
     if (response.data?.choices?.[0]?.message?.content) {
         const jsonResponse = JSON.parse(response.data.choices[0].message.content);
-        const clue = jsonResponse.clue || jsonResponse.content || response.data.choices[0].message.content;
-        console.log(`Received clue for '${word}': ${clue}`);
+        console.log('Raw GPT response:', jsonResponse);
+        
+        // Extract just the clue, removing any extra conversation
+        let clue = jsonResponse.clue || jsonResponse.content || response.data.choices[0].message.content;
+        
+        // Remove common prefixes and extra text
+        clue = clue.replace(/^(Certainly!|Here's|Clue:|Sure!|A clue for|\*\*Clue:\*\*|"\*\*|Here is|Let me help you with that|How about this)\.?\s*/i, '')
+                   .replace(/\*\*/g, '')
+                   .trim();
+        
+        console.log(`Cleaned clue for '${word}': ${clue}`);
         return clue;
     } else {
         console.error(`Unexpected response structure from OpenAI for '${word}':`, response.data);
