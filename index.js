@@ -19,11 +19,9 @@ async function generateClue(word) {
       model: OPENAI_MODEL,
       messages: [{
         role: "user",
-        content: `Create a brief, educational crossword clue for the word "${word}". Respond with a JSON object containing only a "clue" field. Do not include any other text, formatting, or explanation.`
+        content: `Create a brief, educational crossword clue for the word "${word}". Respond with a JSON object containing only a "clue" field. Do not include any other text, formatting, or explanation. Example for word FREE, <clue>Something that doesn't cost anything</clue>`
       }],
-      response_format: { "type": "json_object" },
-      temperature: 0.7
-    }, {
+      response_format: { "type": "json_object" },    }, {
       timeout: 20000, // Move timeout to axios config
       headers: {
         'Authorization': `Bearer ${OPENAI_API_KEY}`,
