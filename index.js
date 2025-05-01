@@ -158,10 +158,11 @@ function isValid(row, col, word, isAcross, currentGrid, availableWordsFullList, 
 // --- End isValid FUNCTION ---
 
 
-async function generateCrossword(requestedSize = 4) {
-  console.log(`Starting generateCrossword with size: ${requestedSize}`);
+async function generateCrossword(requestedSize = 4, attempts = 0) {
+  console.log(`Starting generateCrossword with size: ${requestedSize} (attempt ${attempts + 1})`);
   const size = parseInt(requestedSize);
   globalSize = size;
+  const maxAttempts = 3;
 
   // --- (Grid initialization, word filtering, start word selection - remains the same) ---
   if (![4, 5, 6].includes(size)) throw new Error('Invalid grid size. Must be 4, 5, or 6.');
@@ -244,10 +245,16 @@ async function generateCrossword(requestedSize = 4) {
 
   if (!success) {
     console.error('Failed to place all words during the recursive solve process.');
-    // It's useful to log the grid state at the point of failure
     console.error('Grid state at failure point:');
     console.error(grid.map(row => row.map(c => c || '_').join(' ')).join('\n'));
-    throw new Error('Could not generate a valid crossword with the current word list and constraints.'); // Throw error
+    
+    // Try again if we haven't reached max attempts
+    if (attempts < maxAttempts) {
+      console.log(`Retrying crossword generation (attempt ${attempts + 2}/${maxAttempts + 1})`);
+      return generateCrossword(requestedSize, attempts + 1);
+    }
+    
+    throw new Error('Could not generate a valid crossword after multiple attempts. Please try again.'); 
   }
 
   // --- Post-generation: Numbering & Finding Final Words ---
