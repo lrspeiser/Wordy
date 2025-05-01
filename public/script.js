@@ -203,6 +203,22 @@ function handleInput(event) {
         inputElement.classList.add('correct-letter');
         inputElement.classList.remove('incorrect-letter');
         
+        // Check if puzzle is complete
+        const allInputs = document.querySelectorAll('.cell input');
+        const isComplete = Array.from(allInputs).every(input => {
+            const row = parseInt(input.dataset.row);
+            const col = parseInt(input.dataset.col);
+            return input.value.toLowerCase() === solutionGrid[row][col].toLowerCase();
+        });
+
+        if (isComplete) {
+            setTimeout(() => {
+                if (confirm('Done! Try another?')) {
+                    generateCrossword();
+                }
+            }, 100);
+        }
+        
         const selectedClue = document.querySelector('.clue-section p.selected');
         const direction = selectedClue ? selectedClue.dataset.direction : 'across';
         console.log(`Current direction: ${direction}`);
