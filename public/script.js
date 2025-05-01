@@ -196,9 +196,7 @@ function handleInput(event) {
             prevCell = document.querySelector(`input[data-row="${row-1}"][data-col="${col}"]`);
         }
         
-        if (prevCell) {
-            prevCell.value = '';
-            prevCell.classList.remove('correct-letter');
+        if (prevCell && prevCell.value) {
             prevCell.focus();
         }
         return;
