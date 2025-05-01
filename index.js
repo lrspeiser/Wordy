@@ -19,7 +19,7 @@ async function generateClue(word) {
       model: OPENAI_MODEL,
       messages: [{
         role: "user",
-        content: `These are crosswords for high schoolers, so it should be a reference that they can understand, but also is educational in nature. Generate a short, clever crossword puzzle clue for the word "${word}". `
+        content: `These are crosswords for high schoolers, so it should be a reference that they can understand, but also is educational in nature. Generate a short, clever crossword puzzle clue for the word "${word}". Only provide the clue without any prefixes or formatting, ensuring it's appropriate for high school students while having educational value.`
       }],
       temperature: 0.7
     }, {
