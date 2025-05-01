@@ -61,10 +61,11 @@ function renderGrid(gridData, numbering) {
     const size = gridData.length;
 
     // Calculate cell size based on container/viewport
-    const containerWidth = gridElement.offsetWidth || Math.min(window.innerWidth * 0.9, 800); // Estimate width
-    const maxCellSize = 60;
-    const minCellSize = 35;
-    let cellSize = Math.floor(containerWidth / size) - 2; // Account for gaps/borders
+    // Calculate size based on clue text width
+    const clueWidth = document.querySelector('.clue-section')?.offsetWidth || 250;
+    const maxCellSize = 50; // Reduced from 60 to better match text
+    const minCellSize = 30; // Slightly reduced minimum
+    let cellSize = Math.floor(clueWidth / size);
     cellSize = Math.max(minCellSize, Math.min(maxCellSize, cellSize));
 
     gridElement.style.gridTemplateColumns = `repeat(${size}, ${cellSize}px)`;
