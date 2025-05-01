@@ -19,7 +19,7 @@ async function generateClue(word) {
       model: OPENAI_MODEL,
       messages: [{
         role: "user",
-        content: `Create a short, clever crossword puzzle clue for "${word}" that high school students can understand while being educational. Return only the clue in JSON format.`
+        content: `Create a brief, educational crossword clue for the word "${word}". Respond with a JSON object containing only a "clue" field. Do not include any other text, formatting, or explanation.`
       }],
       response_format: { "type": "json_object" },
       temperature: 0.7
@@ -34,13 +34,13 @@ async function generateClue(word) {
         const jsonResponse = JSON.parse(response.data.choices[0].message.content);
         console.log('Raw GPT response:', jsonResponse);
         
-        // Extract just the clue, removing any extra conversation
-        let clue = jsonResponse.clue || jsonResponse.content || response.data.choices[0].message.content;
+        if (!jsonResponse.clue) {
+          console.error('Invalid JSON response format:', jsonResponse);
+          return `Clue for ${word}`;
+        }
         
-        // Remove common prefixes and extra text
-        clue = clue.replace(/^(Certainly!|Here's|Clue:|Sure!|A clue for|\*\*Clue:\*\*|"\*\*|Here is|Let me help you with that|How about this)\.?\s*/i, '')
-                   .replace(/\*\*/g, '')
-                   .trim();
+        // Clean any markdown or extra formatting
+        let clue = jsonResponse.clue.replace(/\*\*/g, '').trim();
         
         console.log(`Cleaned clue for '${word}': ${clue}`);
         return clue;
