@@ -19,8 +19,9 @@ async function generateClue(word) {
       model: OPENAI_MODEL,
       messages: [{
         role: "user",
-        content: `Provide the data in struct json with only the clue, no supporting text. These are crosswords for high schoolers, so it should be a reference that they can understand, but also is educational in nature. Generate a short, clever crossword puzzle clue for the word "${word}". Only provide the clue without any prefixes or formatting. Don't start it with the word clue or end it with the number of letters. <clue>the clue goes here</clue>`
+        content: `Create a short, clever crossword puzzle clue for "${word}" that high school students can understand while being educational. Return only the clue in JSON format.`
       }],
+      response_format: { "type": "json_object" },
       temperature: 0.7
     }, {
       timeout: 20000, // Move timeout to axios config
@@ -29,8 +30,9 @@ async function generateClue(word) {
         'Content-Type': 'application/json'
       }
     });
-    if (response.data && response.data.choices && response.data.choices.length > 0 && response.data.choices[0].message && response.data.choices[0].message.content) {
-        const clue = response.data.choices[0].message.content.trim();
+    if (response.data?.choices?.[0]?.message?.content) {
+        const jsonResponse = JSON.parse(response.data.choices[0].message.content);
+        const clue = jsonResponse.clue || jsonResponse.content || response.data.choices[0].message.content;
         console.log(`Received clue for '${word}': ${clue}`);
         return clue;
     } else {
