@@ -57,21 +57,28 @@ transition: background-color 0.2s ease;
 .grid {
 display: grid;
 margin: 20px auto;
-gap: 1px;
-width: 100%;
-max-width: 800px;
+gap: 0;
+width: fit-content;
+border: 1px solid #333;
 }
 
 .cell {
-/* width/height set dynamically */
-/* border: 1px solid #000; */ /* Replaced by gap/background */
-display: flex; /* Use flex for centering input */
-/* flex-direction: column; */ /* Not needed with input */
+display: flex;
 background: white;
 position: relative;
-box-sizing: border-box; /* Include padding/border in size */
-justify-content: center; /* Center input horizontally */
-align-items: center; /* Center input vertically */
+box-sizing: border-box;
+justify-content: center;
+align-items: center;
+border-right: 1px solid #333;
+border-bottom: 1px solid #333;
+}
+
+.cell:nth-child(4n) {
+  border-right: none;
+}
+
+.grid > .cell:nth-last-child(-n+4) {
+  border-bottom: none;
 }
 
 .cell.block { /* Style for non-letter cells */
