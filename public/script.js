@@ -188,19 +188,24 @@ function handleInput(event) {
         console.log('Empty input, removing correct-letter class');
         inputElement.classList.remove('correct-letter');
         
-        // Find previous cell based on direction
-        let prevCell;
-        if (direction === 'across') {
-            prevCell = document.querySelector(`input[data-row="${row}"][data-col="${col-1}"]`);
-        } else {
-            prevCell = document.querySelector(`input[data-row="${row-1}"][data-col="${col}"]`);
+        // Only move to previous cell if current cell is already empty
+        if (!inputElement.getAttribute('data-last-value')) {
+            let prevCell;
+            if (direction === 'across') {
+                prevCell = document.querySelector(`input[data-row="${row}"][data-col="${col-1}"]`);
+            } else {
+                prevCell = document.querySelector(`input[data-row="${row-1}"][data-col="${col}"]`);
+            }
+            
+            if (prevCell) {
+                prevCell.focus();
+            }
         }
-        
-        if (prevCell && prevCell.value) {
-            prevCell.focus();
-        }
+        inputElement.setAttribute('data-last-value', '');
         return;
     }
+    // Store the current value for next backspace
+    inputElement.setAttribute('data-last-value', enteredValue);
 
     console.log(`Current direction: ${direction}`);
 
