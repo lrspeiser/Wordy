@@ -195,8 +195,7 @@ function handleInput(event) {
             prevCell = document.querySelector(`input[data-row="${row-1}"][data-col="${col}"]`);
         }
         
-        // If current cell is empty and there's a previous cell, move to it and clear it
-        if (!inputElement.value && prevCell && prevCell.value) {
+        if (prevCell) {
             prevCell.value = '';
             prevCell.classList.remove('correct-letter');
             prevCell.focus();
