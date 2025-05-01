@@ -204,9 +204,6 @@ function handleInput(event) {
         return;
     }
 
-    // Get direction
-    const selectedClue = document.querySelector('.clue-section p.selected');
-    const direction = selectedClue ? selectedClue.dataset.direction : 'across';
     console.log(`Current direction: ${direction}`);
 
     if (!solutionGrid || !solutionGrid[row] || typeof solutionGrid[row][col] === 'undefined') {
