@@ -179,10 +179,28 @@ function handleInput(event) {
     const enteredValue = inputElement.value.toLowerCase();
     console.log(`Input at [${row},${col}]: ${enteredValue}`);
 
-    // Skip if empty (backspace/delete)
+    // Get direction from selected clue
+    const selectedClue = document.querySelector('.clue-section p.selected');
+    const direction = selectedClue ? selectedClue.dataset.direction : 'across';
+
+    // Handle backspace/delete
     if (enteredValue === '') {
         console.log('Empty input, removing correct-letter class');
         inputElement.classList.remove('correct-letter');
+        
+        // Find previous cell based on direction
+        let prevCell;
+        if (direction === 'across') {
+            prevCell = document.querySelector(`input[data-row="${row}"][data-col="${col-1}"]`);
+        } else {
+            prevCell = document.querySelector(`input[data-row="${row-1}"][data-col="${col}"]`);
+        }
+        
+        if (prevCell) {
+            prevCell.value = '';
+            prevCell.classList.remove('correct-letter');
+            prevCell.focus();
+        }
         return;
     }
 
