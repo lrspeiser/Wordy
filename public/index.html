@@ -1,25 +1,47 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Crossword Builder</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"> <!-- Add viewport -->
+  <title>Wordy</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <div class="container">
-    <h1>Crossword Puzzle</h1> <!-- Changed title slightly -->
-    <div class="controls">
-        <label for="gridSize">Grid Size:</label>
-        <select id="gridSize" class="grid-selector">
-          <option value="4">4x4 Grid</option>
-          <option value="5">5x5 Grid</option>
-          <option value="6">6x6 Grid</option>
-        </select>
-        <button id="generateBtn">Generate New Crossword</button>
+    <h1 id="puzzleTitle">Wordy</h1>
+
+    <!-- **** PUZZLE DISPLAY AREA **** -->
+    <div id="puzzleDisplayArea" style="display: none;">
+        <!-- **** ADD SUCCESS INDICATOR HERE **** -->
+        <div id="successIndicator" class="success-indicator">✓</div>
+        <!-- ********************************* -->
+        <div id="loadingMessage" style="display: none; margin: 20px;">Loading...</div>
+        <div id="grid" class="grid"></div>
+        <div id="cluesContainer"></div>
     </div>
-    <div id="loadingMessage" style="display: none; margin: 20px;">Generating... Please wait...</div>
-    <div id="grid" class="grid"></div>
-    <div id="cluesContainer"></div> <!-- Changed ID -->
+    <!-- **** END PUZZLE DISPLAY AREA **** -->
+
+    <!-- **** Initial Prompt Message **** -->
+    <div id="initialPrompt" style="margin: 40px 0; text-align: center; color: #555;">
+        <p>Select a puzzle from the list below, or generate a new one.</p>
+    </div>
+    <!-- **** End Initial Prompt Message **** -->
+
+    <!-- **** SAVED PUZZLES LIST **** -->
+    <div id="savedPuzzlesContainer">
+        <h2 id="savedPuzzlesHeader">Recent Puzzles</h2>
+        <ul id="savedPuzzlesList">
+            <li id="loadingSavedPuzzles" style="display: none;">Loading list...</li>
+            <li id="noSavedPuzzles" style="display: none;">No saved puzzles found yet. Generate one below!</li>
+        </ul>
+    </div>
+    <!-- **** END SAVED PUZZLES LIST **** -->
+
+    <!-- **** CONTROLS **** -->
+    <div class="controls" style="margin-top: 20px;">
+        <button id="generateBtn">Generate A New  Puzzle</button>
+    </div>
+     <!-- **** END CONTROLS **** -->
+
   </div>
   <script src="script.js"></script>
 </body>

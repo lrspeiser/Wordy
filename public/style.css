@@ -1,47 +1,54 @@
+/* Import Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Lato:wght@400;700&family=Merriweather:ital,wght@0,400;0,700;1,400&display=swap');
+
+/* --- Base Styles --- */
 body {
-  font-family: sans-serif;
+  font-family: 'Merriweather', serif; /* NYT Crossword-like Serif */
   background-color: #f4f4f4;
   color: #333;
+  line-height: 1.5; /* Improve readability */
 }
 
 .container {
-max-width: 800px;
-margin: 20px auto;
-padding: 15px;
-text-align: center;
-background-color: #fff;
-box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-border-radius: 8px;
-display: flex;
-flex-direction: column;
-align-items: stretch;
+  max-width: 800px;
+  margin: 20px auto;
+  padding: 15px;
+  text-align: center;
+  background-color: #fff;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
 }
 
+h1#puzzleTitle { /* Target the main title */
+    font-family: 'Lato', sans-serif; /* Use Lato for the main title */
+    margin-bottom: 25px;
+}
+
+/* --- Controls --- */
 .controls {
-  margin-bottom: 20px;
+  margin-bottom: 20px; /* Original margin */
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 15px; /* Add space between controls */
+  gap: 15px;
+  margin-top: 20px; /* Added margin-top for spacing */
 }
 
-.grid-selector {
-padding: 8px;
-/* margin: 10px; */ /* Use gap in controls instead */
-font-size: 16px;
-border-radius: 4px;
-border: 1px solid #ccc;
-}
+/* Grid selector rules removed as element is gone */
 
-#generateBtn { /* Give button an ID for easier selection */
-padding: 10px 20px;
-font-size: 16px;
-cursor: pointer;
-background-color: #5cb85c;
-color: white;
-border: none;
-border-radius: 4px;
-transition: background-color 0.2s ease;
+#generateBtn {
+  font-family: 'Lato', sans-serif; /* Use Lato for button text */
+  padding: 10px 20px;
+  font-size: 16px;
+  cursor: pointer;
+  background-color: #5cb85c;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
 }
 
 #generateBtn:hover {
@@ -53,56 +60,70 @@ transition: background-color 0.2s ease;
   cursor: not-allowed;
 }
 
+/* --- Puzzle Display Area (MODIFIED) --- */
+#puzzleDisplayArea {
+    width: 100%;
+    position: relative; /* Needed for absolute positioning of success indicator */
+}
+#initialPrompt {
+    /* No specific styles needed unless adding padding/margin */
+     margin: 40px 0;
+     text-align: center;
+     color: #555;
+}
 
+
+/* --- Grid Styles --- */
 .grid {
-display: grid;
-margin: 20px auto;
-gap: 0;
-width: fit-content;
-border: 1px solid #333;
+  display: grid;
+  margin: 20px auto;
+  gap: 0;
+  width: fit-content;
+  border: 1px solid #333;
 }
 
 .cell {
-display: flex;
-background: white;
-position: relative;
-box-sizing: border-box;
-justify-content: center;
-align-items: center;
-border-right: 1px solid #333;
-border-bottom: 1px solid #333;
+  display: flex;
+  background: white;
+  position: relative;
+  box-sizing: border-box;
+  justify-content: center;
+  align-items: center;
+  border-right: 1px solid #333;
+  border-bottom: 1px solid #333;
 }
 
+/* Adjust nth-child based on grid size (currently fixed at 4) */
 .cell:nth-child(4n) {
   border-right: none;
 }
-
 .grid > .cell:nth-last-child(-n+4) {
   border-bottom: none;
 }
 
-.cell.block { /* Style for non-letter cells */
+.cell.block {
   background-color: #333; /* Dark background */
 }
 
 .number {
-position: absolute;
-top: 1px; /* Adjust positioning */
-left: 2px;
-font-size: 10px; /* Smaller number */
-font-weight: bold;
-color: #555; /* Slightly lighter number */
-z-index: 1; /* Ensure number is above input background */
-pointer-events: none; /* Prevent number from blocking input clicks */
+  position: absolute;
+  top: 1px; /* Adjust positioning */
+  left: 2px;
+  font-size: 10px; /* Smaller number */
+  font-weight: bold;
+  color: #555; /* Slightly lighter number */
+  z-index: 1; /* Ensure number is above input background */
+  pointer-events: none; /* Prevent number from blocking input clicks */
+  font-family: 'Lato', sans-serif; /* Use Lato for numbers for clarity */
 }
 
-.cell input { /* Style the input fields */
+.cell input {
   width: 100%;
   height: 100%;
   border: none;
   text-align: center;
   font-size: 20px; /* Adjust as needed */
-  font-family: inherit;
+  font-family: 'Merriweather', serif; /* Inherit body font for answers */
   text-transform: uppercase; /* Show uppercase letters */
   padding: 0;
   margin: 0;
@@ -112,74 +133,163 @@ pointer-events: none; /* Prevent number from blocking input clicks */
   box-sizing: border-box;
 }
 
-.cell input.correct-letter { /* Style for correct letter feedback */
+.cell input.correct-letter {
   background-color: lightgreen !important; /* Use !important if needed */
   color: #111; /* Ensure text is visible on green */
 }
 
+.cell input.incorrect-letter { /* Style for incorrect letter feedback */
+  background-color: lightcoral !important;
+  color: #333;
+}
 
-#cluesContainer { /* Updated ID */
-text-align: left;
-margin-top: 20px;
-display: flex;
-flex-wrap: wrap; /* Allow wrapping on smaller screens */
-gap: 30px; /* Space between Across/Down */
-justify-content: space-between; /* Distribute space */
-width: 100%;
+/* --- Clues Styles --- */
+#cluesContainer {
+  text-align: left;
+  margin-top: 20px;
+  display: flex;
+  flex-wrap: wrap; /* Allow wrapping on smaller screens */
+  gap: 30px; /* Space between Across/Down */
+  justify-content: space-between; /* Distribute space */
+  width: 100%;
 }
 
 .clue-section {
-flex: 1; /* Allow sections to grow */
-min-width: 250px; /* Minimum width before wrapping */
+  flex: 1; /* Allow sections to grow */
+  min-width: 250px; /* Minimum width before wrapping */
 }
 
 .clue-section h3 {
+  font-family: 'Lato', sans-serif; /* Use Lato for section headers */
   border-bottom: 1px solid #eee;
   padding-bottom: 5px;
   margin-bottom: 10px;
+  font-weight: bold;
 }
 
-.clue-section p {
-margin: 8px 0;
-font-size: 14px;
-line-height: 1.4;
-cursor: pointer;
-padding: 4px;
-border-radius: 4px;
+.clue-section p { /* Clue text itself */
+  margin: 8px 0;
+  font-size: 14px;
+  line-height: 1.4;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  font-family: 'Merriweather', serif; /* Inherit body font for clues */
+}
+
+.clue-section p.selected { /* Style for selected clue */
+    background-color: #e0e0e0;
+    font-weight: bold;
 }
 
 .clue-section p:hover {
-background-color: #f0f0f0;
+    background-color: #f0f0f0;
 }
 
-/* Responsive Adjustments */
+/* --- Saved Puzzles List Styles (MODIFIED for center align, no scroll) --- */
+#savedPuzzlesContainer h2 {
+  font-family: 'Lato', sans-serif;
+  text-align: center;
+  margin-bottom: 15px;
+  font-size: 1.2em;
+  color: #555;
+  font-weight: bold;
+}
+
+#savedPuzzlesList {
+  list-style: none;
+  padding: 0;
+  border-radius: 0;
+  display: inline-block;
+  text-align: left;
+}
+
+#savedPuzzlesList li {
+  padding: 0;
+  margin-bottom: 5px;
+}
+#savedPuzzlesList a {
+  font-family: 'Lato', sans-serif;
+  text-decoration: none;
+  color: #337ab7;
+  display: block;
+  padding: 5px 0;
+  transition: background-color 0.2s ease;
+}
+#savedPuzzlesList a:hover { text-decoration: underline; }
+#savedPuzzlesList li.completed a { color: #888; text-decoration: line-through; font-style: italic; }
+#savedPuzzlesList li.completed a:hover { background-color: transparent; text-decoration: line-through; }
+
+#loadingSavedPuzzles, #noSavedPuzzles {
+    color: #888;
+    font-style: italic;
+    text-align: center;
+    padding: 8px 12px;
+    font-family: 'Lato', sans-serif; /* Consistent UI font */
+}
+
+/* --- **** NEW: Success Indicator Styles **** --- */
+.success-indicator {
+    position: absolute;
+    top: 40%; /* Adjust vertical position */
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 120px; /* Large checkmark */
+    color: #28a745; /* Green */
+    opacity: 0;
+    visibility: hidden;
+    /* Fade out transition - starts after 0s delay, takes 0.5s */
+    transition: opacity 0.5s ease-in-out, visibility 0s linear 0.5s;
+    z-index: 100; /* Above grid/clues */
+    pointer-events: none;
+    font-weight: bold;
+}
+
+.success-indicator.show {
+    opacity: 1;
+    visibility: visible;
+    /* Fade in transition - starts after 0s delay, takes 0.5s */
+    transition: opacity 0.5s ease-in-out, visibility 0s linear 0s;
+}
+/* --- **** END: Success Indicator Styles **** --- */
+
+
+/* --- Responsive Adjustments --- */
 @media (max-width: 600px) {
-.container {
-  padding: 10px;
-  margin: 10px auto;
-}
+  .container {
+    padding: 10px;
+    margin: 10px auto;
+  }
 
-.controls {
+  .controls {
+      flex-direction: column;
+      gap: 10px;
+  }
+
+  .cell input {
+    font-size: 18px;
+  }
+
+  #cluesContainer {
     flex-direction: column;
-    gap: 10px;
-}
+    gap: 20px;
+  }
 
-/* Cell size adjusted dynamically in JS */
+  .clue-section {
+      min-width: unset;
+  }
 
-.cell input {
-  font-size: 18px;
-}
+  .number {
+      font-size: 9px;
+  }
 
-#cluesContainer {
-  flex-direction: column;
-  gap: 20px;
-}
+  #savedPuzzlesList {
+      width: 90%; /* Example adjustment */
+  }
 
-.clue-section {
-    min-width: unset; /* Remove min-width on small screens */
-}
-
-.number {
-    font-size: 9px;
-}
+  /* Adjust success indicator size for smaller screens */
+  .success-indicator {
+    font-size: 80px;
+    top: 35%;
+  }
 }
