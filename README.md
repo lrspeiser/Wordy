@@ -2,11 +2,11 @@
 
 ## Purpose
 
-Wordy is a web application that automatically generates playable 4x4 themed crossword puzzles. It leverages the power of OpenAI's GPT-4.1 language model to create unique, educational clues and thematic titles for each puzzle, offering a fresh experience every time. Generated puzzles are saved, allowing users to revisit and play them later.
+Wordy is a web application that automatically generates playable themed crossword puzzles.  While the original version only produced 4x4 grids, the generator now supports any size from **3x3** up to **7x7**.  It leverages the power of OpenAI's GPT‑4.1 language model to create unique, educational clues and thematic titles for each puzzle, offering a fresh experience every time. Generated puzzles are saved, allowing users to revisit and play them later.
 
 ## Features
 
-*   **Automatic Grid Generation:** Creates solvable 4x4 crossword grids using a backtracking algorithm and a provided word list (`words.txt`).
+*   **Automatic Grid Generation:** Creates solvable crossword grids using a backtracking algorithm and a provided word list (`words.txt`). Grid sizes from 3x3 to 7x7 are supported.
 *   **Thematic Puzzles:** Generates a theme based on the first word and clue of the puzzle, then attempts to subtly relate subsequent clues to that theme.
 *   **AI Clue Generation:** Uses OpenAI's GPT-4.1 API to generate educational clues for the words in the grid.
 *   **AI Title Generation:** Uses OpenAI's GPT-4.1 API to generate a thematic title based on the first word/clue pair.
@@ -72,6 +72,7 @@ Wordy is a web application that automatically generates playable 4x4 themed cros
     The server will typically start on port 5000 unless specified otherwise by the `PORT` environment variable.
 
 8.  **Access the Application:** Open your web browser and navigate to `http://localhost:5000` (or your Replit URL).
+    *To generate a puzzle larger than 4×4, pass a `size` parameter to the `/generate` endpoint. For example, visiting `http://localhost:5000/generate?size=5` will return a 5×5 crossword.*
 
 ## How it Works
 
@@ -79,7 +80,7 @@ Wordy is a web application that automatically generates playable 4x4 themed cros
 
 1.  **Initialization:** Loads words from `words.txt`, connects to the database, and ensures the `puzzles` table exists.
 2.  **`/generate` Endpoint:**
-    *   Receives a request (currently fixed to generate a 4x4 grid).
+    *   Receives a request to generate a crossword grid. Specify the desired size using the `size` query parameter (e.g. `/generate?size=5`). Valid sizes range from 3 to 7.
     *   Uses a backtracking algorithm (`solve` function) combined with validity checks (`isValid`) against the `wordList` to fill the grid structure.
     *   Captures the filled grid as the `solutionGrid`.
     *   Numbers the grid cells where words start (`numbering`).
