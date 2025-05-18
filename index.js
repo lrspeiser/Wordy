@@ -198,18 +198,35 @@ app.use(express.static('public'));
 
 let wordList = [];
 let globalSize = 4;
+const wordListsByLength = {};
 
-// --- Fetch Words ---
-async function fetchWords() {
-    try {
-      const data = await fs.promises.readFile('words.txt', 'utf8');
-      wordList = data.split('\n')
-                     .map(word => word.trim().toLowerCase())
-                     .filter(word => word.length > 0 && /^[a-z]+$/.test(word));
-      console.log(`Loaded ${wordList.length} valid words`);
-    } catch (error) {
-      console.error('Error reading words file:', error);
+// --- Load Word Lists for Multiple Lengths ---
+async function loadAllWordLists() {
+    const files = {
+        3: '3words.txt',
+        4: 'words.txt',
+        5: '5words.txt',
+        6: '6words.txt',
+        7: '7words.txt'
+    };
+    for (const [len, file] of Object.entries(files)) {
+        try {
+            const data = await fs.promises.readFile(file, 'utf8');
+            const list = data.split('\n')
+                             .map(w => w.trim().toLowerCase())
+                             .filter(w => w.length === parseInt(len) && /^[a-z]+$/.test(w));
+            wordListsByLength[len] = list;
+            console.log(`Loaded ${list.length} words of length ${len}`);
+        } catch (err) {
+            console.error(`Failed to load ${file}:`, err.message);
+            wordListsByLength[len] = [];
+        }
     }
+    wordList = wordListsByLength[4] || [];
+}
+
+function getWordsOfLength(len) {
+    return wordListsByLength[len] || [];
 }
 
 // --- isValidPrefix ---
@@ -261,6 +278,254 @@ function isValid(row, col, word, isAcross, currentGrid, availableWordsFullList, 
     return true;
 }
 
+// --- Helper for Blocked Crossword Generation ---
+function createEmptyGrid(size) {
+    return Array(size).fill().map(() => Array(size).fill(''));
+}
+
+function cloneGrid(grid) {
+    return grid.map(row => row.map(cell => cell));
+}
+
+function placeSymmetricBlock(grid, r, c) {
+    const size = grid.length;
+    grid[r][c] = '#';
+    grid[size - 1 - r][size - 1 - c] = '#';
+}
+
+function computeSlots(grid) {
+    const size = grid.length;
+    const slots = [];
+    // Across
+    for (let r = 0; r < size; r++) {
+        let start = null;
+        for (let c = 0; c <= size; c++) {
+            const cell = c < size ? grid[r][c] : '#';
+            if (cell !== '#') {
+                if (start === null) start = c;
+            } else {
+                if (start !== null && c - start >= 3) {
+                    slots.push({ row: r, col: start, length: c - start, dir: 'across' });
+                }
+                start = null;
+            }
+        }
+    }
+    // Down
+    for (let c = 0; c < size; c++) {
+        let start = null;
+        for (let r = 0; r <= size; r++) {
+            const cell = r < size ? grid[r][c] : '#';
+            if (cell !== '#') {
+                if (start === null) start = r;
+            } else {
+                if (start !== null && r - start >= 3) {
+                    slots.push({ row: start, col: c, length: r - start, dir: 'down' });
+                }
+                start = null;
+            }
+        }
+    }
+    return slots;
+}
+
+function patternForSlot(slot, grid) {
+    const pattern = [];
+    for (let i = 0; i < slot.length; i++) {
+        const r = slot.dir === 'across' ? slot.row : slot.row + i;
+        const c = slot.dir === 'across' ? slot.col + i : slot.col;
+        const ch = grid[r][c];
+        pattern.push(ch === '' || ch === '#' ? '' : ch);
+    }
+    return pattern;
+}
+
+function placeWordInSlot(word, slot, grid) {
+    for (let i = 0; i < slot.length; i++) {
+        const r = slot.dir === 'across' ? slot.row : slot.row + i;
+        const c = slot.dir === 'across' ? slot.col + i : slot.col;
+        grid[r][c] = word[i];
+    }
+}
+
+function clearWordInSlot(slot, grid) {
+    for (let i = 0; i < slot.length; i++) {
+        const r = slot.dir === 'across' ? slot.row : slot.row + i;
+        const c = slot.dir === 'across' ? slot.col + i : slot.col;
+        grid[r][c] = '';
+    }
+}
+
+function fillSlots(grid, slots, index, usedWords) {
+    if (index >= slots.length) {
+        console.log('All slots filled successfully');
+        return true;
+    }
+    const slot = slots[index];
+    console.log(`Filling slot ${index + 1}/${slots.length} (${slot.dir} @ ${slot.row},${slot.col} len ${slot.length})`);
+    const pattern = patternForSlot(slot, grid);
+    let candidates = getMatchingWords(pattern, getWordsOfLength(slot.length), usedWords);
+    console.log(`Found ${candidates.length} candidate words for slot ${index + 1}`);
+    if (candidates.length === 0) {
+        console.log(`No candidates for slot ${index + 1}, backtracking`);
+        return false;
+    }
+    candidates = candidates.sort(() => Math.random() - 0.5);
+    for (const word of candidates) {
+        console.log(`Trying word "${word}" in slot ${index + 1}`);
+        placeWordInSlot(word, slot, grid);
+        usedWords.add(word);
+        if (fillSlots(grid, slots, index + 1, usedWords)) return true;
+        console.log(`Backtracking word "${word}" from slot ${index + 1}`);
+        usedWords.delete(word);
+        clearWordInSlot(slot, grid);
+    }
+    console.log(`Exhausted candidates for slot ${index + 1}, backtracking`);
+    return false;
+}
+
+async function generateBlockedCrossword(size) {
+    let blockPairs = Math.floor(size / 2);
+    for (let attempt = 0; attempt < 5; attempt++) {
+        console.log(`Blocked puzzle attempt ${attempt + 1} with ${blockPairs} block pairs`);
+        const grid = createEmptyGrid(size);
+        let placed = 0;
+        let tries = 0;
+        while (placed < blockPairs && tries < 1000) {
+            const r = Math.floor(Math.random() * (size - 2)) + 1;
+            const c = Math.floor(Math.random() * (size - 2)) + 1;
+            if (grid[r][c] === '') {
+                placeSymmetricBlock(grid, r, c);
+                placed++;
+            }
+            tries++;
+        }
+        const slots = computeSlots(grid);
+        console.log(`Attempt ${attempt + 1}: computed ${slots.length} slots`);
+        if (slots.length === 0) {
+            console.log(`Attempt ${attempt + 1} produced no slots, increasing blockPairs to ${blockPairs + 1}`);
+            blockPairs++;
+            continue;
+        }
+        const used = new Set();
+        const gridCopy = cloneGrid(grid);
+        if (fillSlots(gridCopy, slots, 0, used)) {
+            console.log(`Attempt ${attempt + 1} successfully filled all slots`);
+            const solution = gridCopy.map(row => row.map(cell => cell === '#' ? null : cell));
+            return finalizePuzzleFromGrid(solution, size);
+        }
+        console.warn(`Attempt ${attempt + 1} failed to fill slots, increasing block pairs`);
+        blockPairs++;
+    }
+    throw new Error('Failed to generate blocked crossword.');
+}
+
+async function finalizePuzzleFromGrid(solutionGrid, size) {
+  console.log('Numbering and finding final words...');
+  const numbering = Array(size).fill().map(() => Array(size).fill(0));
+  let currentNumber = 1; const starts = {}; const wordsForClues = { across: {}, down: {} };
+  let firstWordDetails = null;
+
+  for (let r = 0; r < size; r++) {
+      for (let c = 0; c < size; c++) {
+          if (!solutionGrid[r][c]) continue;
+          const isAcrossStart = (c === 0 || !solutionGrid[r][c - 1]);
+          const isDownStart = (r === 0 || !solutionGrid[r - 1][c]);
+          if (isAcrossStart || isDownStart) {
+              const startKey = `${r},${c}`; let numToUse = starts[startKey];
+              if (!numToUse) { numToUse = currentNumber++; numbering[r][c] = numToUse; starts[startKey] = numToUse; }
+              else if (numbering[r][c] === 0) { numbering[r][c] = numToUse; }
+
+              if (isAcrossStart && !wordsForClues.across[numToUse]) {
+                  let word = '';
+                  for (let k = c; k < size && solutionGrid[r][k]; k++) word += solutionGrid[r][k];
+                  wordsForClues.across[numToUse] = word;
+                  if (numToUse === 1) firstWordDetails = { word, number: numToUse, direction: 'across' };
+              }
+              if (isDownStart && !wordsForClues.down[numToUse]) {
+                  let word = '';
+                  for (let k = r; k < size && solutionGrid[k][c]; k++) word += solutionGrid[k][c];
+                  wordsForClues.down[numToUse] = word;
+                  if (numToUse === 1 && !firstWordDetails) firstWordDetails = { word, number: numToUse, direction: 'down' };
+              }
+          }
+      }
+  }
+
+  if (!firstWordDetails) {
+      throw new Error('Failed to identify seed word for theme.');
+  }
+
+  const firstClue = await generateClue(firstWordDetails.word);
+  const puzzleThemeTitle = await generateThemeTitle(firstWordDetails.word, firstClue);
+
+  const cluePromises = [];
+  const finalClues = { across: [], down: [] };
+  let clueCount = 0;
+
+  if (firstWordDetails.direction === 'across') {
+      finalClues.across.push({ number: firstWordDetails.number, clue: firstClue });
+  } else {
+      finalClues.down.push({ number: firstWordDetails.number, clue: firstClue });
+  }
+  clueCount++;
+
+  for (const numStr in wordsForClues.across) {
+      const num = parseInt(numStr);
+      if (num === firstWordDetails.number && firstWordDetails.direction === 'across') continue;
+      const word = wordsForClues.across[num];
+      if (word) {
+          clueCount++;
+          cluePromises.push(generateClue(word, puzzleThemeTitle)
+              .then(clue => ({ direction: 'across', number: num, clue }))
+              .catch(() => ({ direction: 'across', number: num, clue: `Error fetching clue for ACROSS ${num}` })));
+      }
+  }
+  for (const numStr in wordsForClues.down) {
+      const num = parseInt(numStr);
+      if (num === firstWordDetails.number && firstWordDetails.direction === 'down') continue;
+      const word = wordsForClues.down[num];
+      if (word) {
+          clueCount++;
+          cluePromises.push(generateClue(word, puzzleThemeTitle)
+              .then(clue => ({ direction: 'down', number: num, clue }))
+              .catch(() => ({ direction: 'down', number: num, clue: `Error fetching clue for DOWN ${num}` })));
+      }
+  }
+
+  const settledClues = await Promise.allSettled(cluePromises);
+  settledClues.forEach(result => {
+      if (result.status === 'fulfilled' && result.value) {
+          const item = result.value;
+          if (item.direction === 'across') finalClues.across.push({ number: item.number, clue: item.clue });
+          else finalClues.down.push({ number: item.number, clue: item.clue });
+      }
+  });
+
+  finalClues.across.sort((a,b) => a.number - b.number);
+  finalClues.down.sort((a,b) => a.number - b.number);
+
+  let puzzleId = uuidv4();
+  await savePuzzle({
+      id: puzzleId,
+      title: puzzleThemeTitle,
+      size,
+      grid: solutionGrid.map(row => row.map(cell => cell || null)),
+      numbering,
+      clues: finalClues,
+      solutionGrid
+  }).catch(() => {});
+
+  return {
+      puzzleId,
+      title: puzzleThemeTitle,
+      grid: solutionGrid.map(row => row.map(cell => cell || null)),
+      numbering,
+      clues: finalClues,
+      solutionGrid
+  };
+}
+
 // --- generateCrossword (MODIFIED for thematic clue generation) ---
 async function generateCrossword(requestedSize = 4, attempts = 0) {
   console.log(`Starting generateCrossword with size: ${requestedSize} (attempt ${attempts + 1})`);
@@ -268,8 +533,12 @@ async function generateCrossword(requestedSize = 4, attempts = 0) {
   globalSize = size;
   const maxAttempts = 3;
 
+  if (size !== 4) {
+      return generateBlockedCrossword(size);
+  }
+
   // --- Grid initialization, word filtering, start word selection ---
-  if (![4, 5, 6].includes(size)) throw new Error('Invalid grid size. Must be 4, 5, or 6.');
+  if (size < 3 || size > 7) throw new Error('Invalid grid size. Must be between 3 and 7.');
   const grid = Array(size).fill().map(() => Array(size).fill(''));
   const usedWords = { across: Array(size).fill(null), down: Array(size).fill(null) };
   const usedWordsSet = new Set();
@@ -283,27 +552,39 @@ async function generateCrossword(requestedSize = 4, attempts = 0) {
   usedWords.across[0] = startWord; usedWordsSet.add(startWord);
 
   // --- solve FUNCTION ---
-  function solve(pos = 0) { /* ... (no changes needed) ... */
-    if (pos === size * 2) { return true; }
-    const isAcross = pos % 2 === 0; const index = Math.floor(pos / 2);
-    const start_row = isAcross ? index : 0; const start_col = isAcross ? 0 : index;
+  function solve(pos = 0) {
+    if (pos === size * 2) {
+      console.log('Solved grid after trying all positions');
+      return true;
+    }
+    const isAcross = pos % 2 === 0;
+    const index = Math.floor(pos / 2);
+    console.log(`Solving position ${pos} (${isAcross ? 'across' : 'down'} index ${index})`);
+    const start_row = isAcross ? index : 0;
+    const start_col = isAcross ? 0 : index;
     let pattern = Array(size).fill('');
     if (isAcross) { for (let i = 0; i < size; i++) pattern[i] = grid[index][i] || ''; }
     else { for (let i = 0; i < size; i++) pattern[i] = grid[i][index] || ''; }
     const possibleWords = getMatchingWords(pattern, availableSizeWords, usedWordsSet);
+    console.log(`Position ${pos} has ${possibleWords.length} possible words`);
     const shuffledWords = possibleWords.sort(() => Math.random() - 0.5);
     for (const word of shuffledWords) {
+       console.log(`Placing word "${word}" at position ${pos}`);
        const gridBackup = grid.map(innerRow => [...innerRow]);
        if (isValid(start_row, start_col, word, isAcross, grid, wordList, usedWordsSet)) {
            if (isAcross) { for (let i = 0; i < size; i++) grid[index][i] = word[i]; usedWords.across[index] = word; }
            else { for (let i = 0; i < size; i++) grid[i][index] = word[i]; usedWords.down[index] = word; }
            usedWordsSet.add(word);
            if (solve(pos + 1)) return true;
+           console.log(`Backtracking from word "${word}" at position ${pos}`);
            usedWordsSet.delete(word);
            if (isAcross) usedWords.across[index] = null; else usedWords.down[index] = null;
            for (let i = 0; i < size; i++) { for (let j = 0; j < size; j++) { grid[i][j] = gridBackup[i][j]; } }
+       } else {
+           console.log(`Word "${word}" did not fit at position ${pos}`);
        }
     }
+    console.log(`No valid words for position ${pos}, backtracking`);
     return false;
   }
 
@@ -547,7 +828,7 @@ app.get('/puzzle/:id', async (req, res) => {
 
 // --- Start Server ---
 // (No changes needed in the startup logic)
-Promise.all([fetchWords(), initializeDatabase()])
+Promise.all([loadAllWordLists(), initializeDatabase()])
   .then(() => {
     if (wordList.length === 0) {
         console.error("Word list is empty after attempting to load. Check words.txt.");
