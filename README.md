@@ -2,11 +2,11 @@
 
 ## Purpose
 
-Wordy is a web application that automatically generates playable 4x4 themed crossword puzzles. It leverages the power of OpenAI's GPT-4.1 language model to create unique, educational clues and thematic titles for each puzzle, offering a fresh experience every time. Generated puzzles are saved, allowing users to revisit and play them later.
+Wordy is a web application that automatically generates playable themed crossword puzzles. Grid size is configurable from 3×3 up to 7×7 via a query parameter. The backend leverages OpenAI's GPT-4.1 language model to create unique, educational clues and thematic titles for each puzzle, offering a fresh experience every time. Generated puzzles are saved so users can revisit and play them later.
 
 ## Features
 
-*   **Automatic Grid Generation:** Creates solvable 4x4 crossword grids using a backtracking algorithm and a provided word list (`words.txt`).
+*   **Automatic Grid Generation:** Creates solvable crossword grids using a backtracking algorithm and provided word lists. Sizes from 3×3 to 7×7 are supported.
 *   **Thematic Puzzles:** Generates a theme based on the first word and clue of the puzzle, then attempts to subtly relate subsequent clues to that theme.
 *   **AI Clue Generation:** Uses OpenAI's GPT-4.1 API to generate educational clues for the words in the grid.
 *   **AI Title Generation:** Uses OpenAI's GPT-4.1 API to generate a thematic title based on the first word/clue pair.
@@ -72,6 +72,7 @@ Wordy is a web application that automatically generates playable 4x4 themed cros
     The server will typically start on port 5000 unless specified otherwise by the `PORT` environment variable.
 
 8.  **Access the Application:** Open your web browser and navigate to `http://localhost:5000` (or your Replit URL).
+    *   To request a different puzzle size, append `?size=5` (for example) to the `/generate` endpoint or use the size dropdown in the UI.
 
 ## How it Works
 
@@ -79,8 +80,8 @@ Wordy is a web application that automatically generates playable 4x4 themed cros
 
 1.  **Initialization:** Loads words from `words.txt`, connects to the database, and ensures the `puzzles` table exists.
 2.  **`/generate` Endpoint:**
-    *   Receives a request (currently fixed to generate a 4x4 grid).
-    *   Uses a backtracking algorithm (`solve` function) combined with validity checks (`isValid`) against the `wordList` to fill the grid structure.
+    *   Accepts an optional `size` query parameter to select grid dimensions (between 3 and 7).
+    *   Uses a backtracking algorithm (`solve` function) combined with validity checks (`isValid`) against the word lists to fill the grid structure.
     *   Captures the filled grid as the `solutionGrid`.
     *   Numbers the grid cells where words start (`numbering`).
     *   Identifies the final words used and their locations (`wordsForClues`).
@@ -105,7 +106,7 @@ Wordy is a web application that automatically generates playable 4x4 themed cros
     *   Otherwise, calls `showInitialView()` to display the welcome prompt.
 2.  **Loading/Generating:**
     *   `loadSpecificPuzzle(id)`: Fetches full puzzle data from `/puzzle/:id`, stores the `solutionGrid`, renders the grid and clues using `renderGrid` and `renderClues`, and displays the puzzle area.
-    *   `generateNewCrossword()`: Calls the backend `/generate` endpoint, receives the new puzzle data, stores the `solutionGrid`, renders the puzzle, updates the browser URL using `history.pushState`, and refreshes the puzzle list.
+    *   `generateNewCrossword()`: Reads the selected size from the dropdown, calls the backend `/generate?size=` endpoint, stores the returned puzzle data, renders it, updates the browser URL, and refreshes the puzzle list.
 3.  **Gameplay (`handleInput`, `handleKeyDown`):**
     *   Listens for input and keydown events on grid cells.
     *   `handleInput`:

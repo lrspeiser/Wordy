@@ -37,9 +37,17 @@
     <!-- **** END SAVED PUZZLES LIST **** -->
 
     <!-- **** CONTROLS **** -->
-    <div class="controls" style="margin-top: 20px;">
-        <button id="generateBtn">Generate A New  Puzzle</button>
-    </div>
+      <div class="controls" style="margin-top: 20px;">
+          <label for="sizeSelect">Size:</label>
+          <select id="sizeSelect">
+              <option value="3">3x3</option>
+              <option value="4" selected>4x4</option>
+              <option value="5">5x5</option>
+              <option value="6">6x6</option>
+              <option value="7">7x7</option>
+          </select>
+          <button id="generateBtn">Generate A New  Puzzle</button>
+      </div>
      <!-- **** END CONTROLS **** -->
 
   </div>

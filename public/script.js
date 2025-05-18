@@ -548,12 +548,13 @@ async function loadSpecificPuzzle(puzzleId) {
 
 // --- Generate New Crossword (MODIFIED for fixed size and view management) ---
 async function generateNewCrossword() {
-    const fixedSize = 4;
-    console.log(`Generating new ${fixedSize}x${fixedSize} crossword`);
-    showLoading(`Generating ${fixedSize}x${fixedSize} puzzle...`); // Calls showPuzzleView & clearPuzzleAreaContent
+    const sizeSelect = document.getElementById('sizeSelect');
+    const size = sizeSelect ? parseInt(sizeSelect.value, 10) : 4;
+    console.log(`Generating new ${size}x${size} crossword`);
+    showLoading(`Generating ${size}x${size} puzzle...`); // Calls showPuzzleView & clearPuzzleAreaContent
     currentPuzzleId = null; // Reset current ID for new puzzle
     try {
-        const response = await fetch(`/generate?size=${fixedSize}`);
+        const response = await fetch(`/generate?size=${size}`);
         if (!response.ok) {
             let errorMsg = 'Failed to generate crossword';
             try { const errorData = await response.json(); errorMsg = errorData.error || errorMsg; } catch (e) { /* Ignore */ }
